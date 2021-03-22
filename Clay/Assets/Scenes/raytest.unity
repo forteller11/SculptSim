@@ -471,7 +471,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _particlePrefab: {fileID: 1533876711183798372, guid: abfd8889d7f4f914e9c47fac2b7d94c2, type: 3}
-  _spawnOnStart: 30
+  _spawnOnStart: 5
   _radiusToSpawnIn: 1
   _minRadius: 0.0625
   _maxRadius: 0.3
@@ -510,6 +510,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  _shaderTester: 1
 --- !u!4 &789098179
 Transform:
   m_ObjectHideFlags: 0
