@@ -21,12 +21,7 @@ namespace ClaySimulation
         //
         // [ShowInInspector] float _lastDesiredPosChange = 0.0f;
 
-        public Rigidbody RigidBody { get; private set; }
-
-        private void Start()
-        {
-            RigidBody = GetComponent<Rigidbody>();
-        }
+        [Required] public Rigidbody RigidBody;
 
 
 

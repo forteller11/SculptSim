@@ -469,12 +469,45 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _particlePrefab: {fileID: 1533876711183798372, guid: abfd8889d7f4f914e9c47fac2b7d94c2, type: 3}
-  _spawnOnStart: 5
-  _radiusToSpawnIn: 5
-  _minRadius: 0.125
-  _maxRadius: 1
-  _desiredPercentBetweenMinMax: 0.5
-  _forceMultiplier: 0.1
+  _spawnOnStart: 30
+  _radiusToSpawnIn: 0.5
+  _minRadius: 0.0625
+  _maxRadius: 0.3
+  _desiredPercentBetweenMinMax: 0.7
+  _forceMultiplierCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: -1.0054913
+      value: 0.8290984
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: -0.012936035
+      value: 0.42866302
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  _forceMultiplier: 0.05
 --- !u!4 &789098179
 Transform:
   m_ObjectHideFlags: 0

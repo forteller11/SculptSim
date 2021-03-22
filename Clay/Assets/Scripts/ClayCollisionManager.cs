@@ -15,13 +15,13 @@ namespace ClaySimulation
         [ShowInInspector] private List<Clay> _particles;
         [SerializeField] [AssetsOnly] private Clay _particlePrefab;
         [SerializeField] private int _spawnOnStart = 10;
-        [SerializeField] private int _radiusToSpawnIn = 5;
+        [SerializeField] private float _radiusToSpawnIn = 5;
         private List<Vector3> _particlesToMove;
         [Required] [SerializeField] float _minRadius;
         [Required] [SerializeField] float _maxRadius;
         [SerializeField] float _desiredPercentBetweenMinMax = .5f;
-        // [Tooltip("x== 0 means at desired percent, -1 == at min, 1 == at max")] 
-        // [SerializeField] AnimationCurve _forceMultiplierCurve = new AnimationCurve(new Keyframe(-1, 1), new Keyframe(0, 0), new Keyframe(1, 1));
+        [Tooltip("x== 0 means at desired percent, -1 == at min, 1 == at max")] 
+        [SerializeField] AnimationCurve _forceMultiplierCurve = new AnimationCurve(new Keyframe(-1, 1), new Keyframe(0, 0), new Keyframe(1, 1));
 
         [SerializeField] private float _forceMultiplier = 1f;
         private void Start()
@@ -35,7 +35,7 @@ namespace ClaySimulation
                 var newParticle = Instantiate(_particlePrefab, transform);
                 var randomOutput = (Vector3) random.NextFloat3() - new Vector3(0.5f, 0.5f, 0.5f);
                 Debug.Log(randomOutput);
-                var startingPos = (Vector3) random.NextFloat3() - new Vector3(0.5f,0.5f,0.5f) * _radiusToSpawnIn;
+                var startingPos = randomOutput * _radiusToSpawnIn;
                 newParticle.transform.position = startingPos + transform.position;
                 
                 _particles.Add(newParticle);
@@ -78,7 +78,7 @@ namespace ClaySimulation
                         else 
                             indexInCurve = Mathf.InverseLerp(_desiredPercentBetweenMinMax, _maxRadius, p1p2Dist); //0, 1
 
-                        float scale = currentToDesiredPercentage *  _forceMultiplier;
+                        float scale = currentToDesiredPercentage *  _forceMultiplier * _forceMultiplierCurve.Evaluate(indexInCurve);
                         Vector3 posToAddScaled = p1ToP2Dir * scale;
                         
                         _particlesToMove[i] += posToAddScaled;
