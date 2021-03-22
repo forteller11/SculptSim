@@ -122,11 +122,11 @@ namespace ClaySimulation
 
         private void SendParticlesToShader()
         {
-            // for (int i = 0; i < _particles.Count; i++)
-            // {
-            //     _particlePositions[i] = (Vector4) _particles[i].RigidBody.position;
-            // }
-            // _material.SetVectorArray(ParticlesLength, _particlePositions);
+            for (int i = 0; i < _particles.Count; i++)
+            {
+                _particlePositions[i] = (Vector4) _particles[i].RigidBody.position;
+            }
+            _material.SetVectorArray(ParticlesLength, _particlePositions);
             _material.SetInt(ParticlesLength, _shaderTester);
         }
         

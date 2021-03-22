@@ -3,6 +3,7 @@ Shader "Unlit/Clay04"
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
+        _MinDistance  ("Min Distance Until Considered Hit", Float) = .1
     }
     SubShader
     {
@@ -22,43 +23,69 @@ Shader "Unlit/Clay04"
             struct appdata
             {
                 float4 vertex : POSITION;
-                float2 uv : TEXCOORD0;
             };
 
             struct v2f
             {
-                float2 uv : TEXCOORD0;
-                UNITY_FOG_COORDS(1)
                 float4 vertex : SV_POSITION;
             };
-
-            sampler2D _MainTex;
-            float4 _MainTex_ST;
 
             v2f vert (appdata v)
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(v.vertex);
-                o.uv = TRANSFORM_TEX(v.uv, _MainTex);
-                UNITY_TRANSFER_FOG(o,o.vertex);
                 return o;
             }
             int _ParticlesLength;
-            fixed4 frag (v2f i) : SV_Target
+            float4 _ParticlesPosition[5];
+            float _MinDistance;
+
+            float signedDistToSphere(float3 origin, float3 spherePosition, float sphereRadius)
             {
-                // sample the texture
-                fixed4 col = fixed4(1,0,0,1);
+                float signedDistance = distance(origin, spherePosition) - sphereRadius;
+                return signedDistance;
+            }
+            
+            float minDistToScene(float3 position)
+            {
+                float minDist = 4096; //a big number
+                for (int i = 0; i < _ParticlesLength; i++)
+                {
+                    float currentDist = signedDistToSphere(position, _ParticlesPosition[i], 1);
+                    minDist = min(minDist, currentDist);
+                }
+
+                return minDist;
+            }
+            
+            fixed4 frag (v2f input) : SV_Target
+            {
+                fixed4 color;
+                
+                fixed4 origin = screenPointToRay().position;
+                fixed4 dir = screenPointToRay().origin;
+              
+
+                for (int i = 0; i < 100; i++)
+                {
+                    float minDistanceToScene = minDistToScene(origin);
+                    if (minDistanceToScene < _MinDistance)
+                    {
+                        color = fixed4(0,1,0,1);
+                        return color;
+                    }
+                }
+                minDistToScene(origin);
 
                 
-                // for (int index = 0; index < _ParticlesLength; index++)
-                // {
-                //     col += fixed4(0,.1f,.1f,0);
-                // }
-                col = fixed4(_ParticlesLength, _ParticlesLength, _ParticlesLength, 1);
-                // apply fog
-                UNITY_APPLY_FOG(i.fogCoord, col);
-                return col;
+
+                color = fixed4(1,0,0, 1);
+                
+                return color;
             }
+            
+
+            
             ENDCG
         }
     }
