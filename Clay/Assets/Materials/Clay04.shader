@@ -28,18 +28,21 @@ Shader "Unlit/Clay04"
             struct v2f
             {
                 float4 vertex : SV_POSITION;
+                float4 fragPos : POSITION1;
             };
 
-            v2f vert (appdata v)
+            v2f vert (appdata input)
             {
                 v2f o;
-                o.vertex = UnityObjectToClipPos(v.vertex);
+                o.vertex = UnityObjectToClipPos(input.vertex);
+                o.fragPos = mul(unity_ObjectToWorld, input.vertex);
                 return o;
             }
             int _ParticlesLength;
             float4 _ParticlesPosition[5];
             float _MinDistance;
 
+      
             float signedDistToSphere(float3 origin, float3 spherePosition, float sphereRadius)
             {
                 float signedDistance = distance(origin, spherePosition) - sphereRadius;
@@ -62,22 +65,22 @@ Shader "Unlit/Clay04"
             {
                 fixed4 color;
                 
-                fixed4 origin = screenPointToRay().position;
-                fixed4 dir = screenPointToRay().origin;
-              
+                float3 rayPos = input.fragPos;
+                float3 rayDir = normalize(rayPos - _WorldSpaceCameraPos);
 
                 for (int i = 0; i < 100; i++)
                 {
-                    float minDistanceToScene = minDistToScene(origin);
+                    const float minDistanceToScene = minDistToScene(rayPos);
+                    
                     if (minDistanceToScene < _MinDistance)
                     {
                         color = fixed4(0,1,0,1);
                         return color;
                     }
-                }
-                minDistToScene(origin);
 
-                
+                    const float3 amountToMarch = minDistanceToScene * rayDir;
+                    rayPos += amountToMarch;
+                }
 
                 color = fixed4(1,0,0, 1);
                 

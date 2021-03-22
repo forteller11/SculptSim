@@ -36,6 +36,7 @@ namespace ClaySimulation
 
         private void Start()
         {
+  
             //var alreadyTheregameObject.GetComponentsInChildren<Clay>();
             _material = GetComponent<MeshRenderer>().material;
             
