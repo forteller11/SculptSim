@@ -5,6 +5,7 @@ using DefaultNamespace;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using Unity.Mathematics;
+using UnityEngine.Rendering;
 using Random =Unity.Mathematics.Random;
 
 
@@ -21,27 +22,28 @@ namespace ClaySimulation
         [FoldoutGroup("Sim Settings")] [SerializeField] float _maxRadius = 2;
         [FoldoutGroup("Sim Settings")] [SerializeField] float _desiredPercentBetweenMinMax = .5f;
         [FoldoutGroup("Sim Settings")] [SerializeField] [Range(0,1)] private float  _constantMultiplier = .05f;
-        
-        
-      
         [Tooltip("x== 0 means at desired percent, -1 == at min, 1 == at max")] 
         [FoldoutGroup("Sim Settings")] [SerializeField] AnimationCurve _forceMultiplierCurve = new AnimationCurve(new Keyframe(-1, 1), new Keyframe(0, 0), new Keyframe(1, 1));
-
-
-        
         
         [ShowInInspector] private List<Clay> _particles;
         [ShowInInspector] private List<Vector3> _particlesToMove;
-        
+        [ShowInInspector] private List<Vector4> _particlePositions;
+        [ShowInInspector] private Material _material;
+
+        [SerializeField] [Range(0, 1)] private int _shaderTester;
+        private static readonly int ParticlesLength = Shader.PropertyToID("_ParticlesLength");
+        private static readonly int ParticlesPosition = Shader.PropertyToID("_ParticlesPosition");
+
         private void Start()
         {
             //var alreadyTheregameObject.GetComponentsInChildren<Clay>();
-
+            _material = GetComponent<MeshRenderer>().material;
+            
             _particles = new List<Clay>(_spawnOnStart);
             var random = Random.CreateFromIndex((uint)System.DateTime.Now.Millisecond);
             for (int i = 0; i < _spawnOnStart; i++)
             {
-                var newParticle = Instantiate(_particlePrefab, transform);
+                var newParticle = Instantiate(_particlePrefab);
                 var randomOutput = (Vector3) random.NextFloat3() - new Vector3(0.5f, 0.5f, 0.5f);
                 var startingPos = randomOutput * _radiusToSpawnIn;
                 newParticle.transform.position = startingPos + transform.position;
@@ -53,6 +55,10 @@ namespace ClaySimulation
             _particlesToMove = new List<Vector3>(_particles.Count);
             for (int i = 0; i < _particles.Count; i++)
                 _particlesToMove.Add(Vector3.zero);
+            
+            _particlePositions = new List<Vector4>(_particles.Count);
+            for (int i = 0; i < _particles.Count; i++)
+                _particlePositions.Add(Vector4.zero);
         }
 
         private void FixedUpdate()
@@ -107,6 +113,23 @@ namespace ClaySimulation
             }
             #endregion
         }
+
+        private void Update()
+        {
+            SendParticlesToShader();
+            // RenderPipelineManager.beginCameraRendering += 
+        }
+
+        private void SendParticlesToShader()
+        {
+            // for (int i = 0; i < _particles.Count; i++)
+            // {
+            //     _particlePositions[i] = (Vector4) _particles[i].RigidBody.position;
+            // }
+            // _material.SetVectorArray(ParticlesLength, _particlePositions);
+            _material.SetInt(ParticlesLength, _shaderTester);
+        }
+        
 
         private void OnDrawGizmosSelected()
         {

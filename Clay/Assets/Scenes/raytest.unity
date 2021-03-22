@@ -449,6 +449,8 @@ GameObject:
   m_Component:
   - component: {fileID: 789098179}
   - component: {fileID: 789098178}
+  - component: {fileID: 789098181}
+  - component: {fileID: 789098180}
   m_Layer: 0
   m_Name: ClaySim
   m_TagString: Untagged
@@ -470,16 +472,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _particlePrefab: {fileID: 1533876711183798372, guid: abfd8889d7f4f914e9c47fac2b7d94c2, type: 3}
   _spawnOnStart: 30
-  _radiusToSpawnIn: 0.5
+  _radiusToSpawnIn: 1
   _minRadius: 0.0625
   _maxRadius: 0.3
   _desiredPercentBetweenMinMax: 0.7
+  _constantMultiplier: 0.05
   _forceMultiplierCurve:
     serializedVersion: 2
     m_Curve:
     - serializedVersion: 3
-      time: -1.0054913
-      value: 0.8290984
+      time: -1
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -487,27 +490,26 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: -0.012936035
-      value: 0.42866302
-      inSlope: 0
-      outSlope: 0
+      time: 0.0015869141
+      value: 0.4929657
+      inSlope: 0.055370156
+      outSlope: 0.055370156
       tangentMode: 0
       weightedMode: 0
       inWeight: 0
-      outWeight: 0
+      outWeight: 0.11330772
     - serializedVersion: 3
-      time: 1
-      value: 0
-      inSlope: 0
-      outSlope: 0
+      time: 0.9435153
+      value: 0.033888742
+      inSlope: -1.3685352
+      outSlope: -1.3685352
       tangentMode: 0
       weightedMode: 0
-      inWeight: 0
+      inWeight: 0.09996028
       outWeight: 0
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _forceMultiplier: 0.05
 --- !u!4 &789098179
 Transform:
   m_ObjectHideFlags: 0
@@ -517,11 +519,60 @@ Transform:
   m_GameObject: {fileID: 789098177}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -1.869, y: 0.906, z: 0.178}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2, y: 2, z: 2}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &789098180
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 789098177}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &789098181
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 789098177}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a0d6d3100e440054494cc20bb7e862b2, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &1437869827
 GameObject:
   m_ObjectHideFlags: 0
