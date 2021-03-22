@@ -12,18 +12,27 @@ namespace ClaySimulation
 {
     public class ClayCollisionManager : MonoBehaviour
     {
-        [ShowInInspector] private List<Clay> _particles;
-        [SerializeField] [AssetsOnly] private Clay _particlePrefab;
-        [SerializeField] private int _spawnOnStart = 10;
-        [SerializeField] private float _radiusToSpawnIn = 5;
-        private List<Vector3> _particlesToMove;
-        [Required] [SerializeField] float _minRadius;
-        [Required] [SerializeField] float _maxRadius;
-        [SerializeField] float _desiredPercentBetweenMinMax = .5f;
+        
+        [FoldoutGroup("Spawn")] [SerializeField] [AssetsOnly] private Clay _particlePrefab;
+        [FoldoutGroup("Spawn")] [SerializeField] private int _spawnOnStart = 10;
+        [FoldoutGroup("Spawn")] [SerializeField] private float _radiusToSpawnIn = 5;
+        
+        [FoldoutGroup("Sim Settings")] [SerializeField] float _minRadius = 0;
+        [FoldoutGroup("Sim Settings")] [SerializeField] float _maxRadius = 2;
+        [FoldoutGroup("Sim Settings")] [SerializeField] float _desiredPercentBetweenMinMax = .5f;
+        [FoldoutGroup("Sim Settings")] [SerializeField] [Range(0,1)] private float  _constantMultiplier = .05f;
+        
+        
+      
         [Tooltip("x== 0 means at desired percent, -1 == at min, 1 == at max")] 
-        [SerializeField] AnimationCurve _forceMultiplierCurve = new AnimationCurve(new Keyframe(-1, 1), new Keyframe(0, 0), new Keyframe(1, 1));
+        [FoldoutGroup("Sim Settings")] [SerializeField] AnimationCurve _forceMultiplierCurve = new AnimationCurve(new Keyframe(-1, 1), new Keyframe(0, 0), new Keyframe(1, 1));
 
-        [SerializeField] private float _forceMultiplier = 1f;
+
+        
+        
+        [ShowInInspector] private List<Clay> _particles;
+        [ShowInInspector] private List<Vector3> _particlesToMove;
+        
         private void Start()
         {
             //var alreadyTheregameObject.GetComponentsInChildren<Clay>();
@@ -34,7 +43,6 @@ namespace ClaySimulation
             {
                 var newParticle = Instantiate(_particlePrefab, transform);
                 var randomOutput = (Vector3) random.NextFloat3() - new Vector3(0.5f, 0.5f, 0.5f);
-                Debug.Log(randomOutput);
                 var startingPos = randomOutput * _radiusToSpawnIn;
                 newParticle.transform.position = startingPos + transform.position;
                 
@@ -71,14 +79,15 @@ namespace ClaySimulation
                         float percentageBetweenMinMax = Mathf.InverseLerp(_minRadius, _maxRadius, p1p2Dist);
                         float desiredPercentageBetweenMinMax = _desiredPercentBetweenMinMax;
                         float currentToDesiredPercentage = percentageBetweenMinMax - desiredPercentageBetweenMinMax;
-
+                        float desiredDist = Mathf.Lerp(_minRadius, _maxRadius, _desiredPercentBetweenMinMax);
+                        
                         float indexInCurve;
-                        if (percentageBetweenMinMax < _desiredPercentBetweenMinMax)
-                            indexInCurve = -Mathf.InverseLerp(_desiredPercentBetweenMinMax, _minRadius, p1p2Dist); //0, -1
+                        if (p1p2Dist < desiredDist)
+                            indexInCurve = -Mathf.InverseLerp(desiredDist, _minRadius, p1p2Dist); //0, -1
                         else 
-                            indexInCurve = Mathf.InverseLerp(_desiredPercentBetweenMinMax, _maxRadius, p1p2Dist); //0, 1
-
-                        float scale = currentToDesiredPercentage *  _forceMultiplier * _forceMultiplierCurve.Evaluate(indexInCurve);
+                            indexInCurve = Mathf.InverseLerp(desiredDist, _maxRadius, p1p2Dist); //0, 1
+                        
+                        float scale = currentToDesiredPercentage * _constantMultiplier * _forceMultiplierCurve.Evaluate(indexInCurve);
                         Vector3 posToAddScaled = p1ToP2Dir * scale;
                         
                         _particlesToMove[i] += posToAddScaled;
