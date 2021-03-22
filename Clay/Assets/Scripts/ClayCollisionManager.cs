@@ -4,24 +4,43 @@ using System.Linq;
 using DefaultNamespace;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Random = System.Random;
+using Unity.Mathematics;
+using Random =Unity.Mathematics.Random;
+
 
 namespace ClaySimulation
 {
     public class ClayCollisionManager : MonoBehaviour
     {
         [ShowInInspector] private List<Clay> _particles;
+        [SerializeField] [AssetsOnly] private Clay _particlePrefab;
+        [SerializeField] private int _spawnOnStart = 10;
+        [SerializeField] private int _radiusToSpawnIn = 5;
         private List<Vector3> _particlesToMove;
         [Required] [SerializeField] float _minRadius;
         [Required] [SerializeField] float _maxRadius;
         [SerializeField] float _desiredPercentBetweenMinMax = .5f;
-        [Tooltip("x== 0 means at desired percent, -1 == at min, 1 == at max")] 
-        [SerializeField] AnimationCurve _forceMultiplierCurve = new AnimationCurve(new Keyframe(-1, 1), new Keyframe(0, 0), new Keyframe(1, 1));
+        // [Tooltip("x== 0 means at desired percent, -1 == at min, 1 == at max")] 
+        // [SerializeField] AnimationCurve _forceMultiplierCurve = new AnimationCurve(new Keyframe(-1, 1), new Keyframe(0, 0), new Keyframe(1, 1));
 
         [SerializeField] private float _forceMultiplier = 1f;
         private void Start()
         {
-            _particles = gameObject.GetComponentsInChildren<Clay>().ToList();
+            //var alreadyTheregameObject.GetComponentsInChildren<Clay>();
+
+            _particles = new List<Clay>(_spawnOnStart);
+            var random = Random.CreateFromIndex((uint)System.DateTime.Now.Millisecond);
+            for (int i = 0; i < _spawnOnStart; i++)
+            {
+                var newParticle = Instantiate(_particlePrefab, transform);
+                var randomOutput = (Vector3) random.NextFloat3() - new Vector3(0.5f, 0.5f, 0.5f);
+                Debug.Log(randomOutput);
+                var startingPos = (Vector3) random.NextFloat3() - new Vector3(0.5f,0.5f,0.5f) * _radiusToSpawnIn;
+                newParticle.transform.position = startingPos + transform.position;
+                
+                _particles.Add(newParticle);
+            }
+            
             
             _particlesToMove = new List<Vector3>(_particles.Count);
             for (int i = 0; i < _particles.Count; i++)
@@ -59,7 +78,7 @@ namespace ClaySimulation
                         else 
                             indexInCurve = Mathf.InverseLerp(_desiredPercentBetweenMinMax, _maxRadius, p1p2Dist); //0, 1
 
-                        float scale = currentToDesiredPercentage * _forceMultiplierCurve.Evaluate(indexInCurve) * _forceMultiplier;
+                        float scale = currentToDesiredPercentage *  _forceMultiplier;
                         Vector3 posToAddScaled = p1ToP2Dir * scale;
                         
                         _particlesToMove[i] += posToAddScaled;
@@ -72,9 +91,9 @@ namespace ClaySimulation
             #region move particles
             for (int i = 0; i < _particles.Count; i++)
             {
-                 //var pos = _particles[i].RigidBody.position;
-                var newPos = _particlesToMove[i];
-                _particles[i].RigidBody.AddForce(newPos);
+                var pos = _particles[i].transform.position;
+                var newPos = pos + _particlesToMove[i];
+                _particles[i].RigidBody.MovePosition(newPos);
                 _particlesToMove[i] = Vector3.zero;
             }
             #endregion
@@ -82,17 +101,20 @@ namespace ClaySimulation
 
         private void OnDrawGizmosSelected()
         {
-            Unity.Mathematics.Random ran = Unity.Mathematics.Random.CreateFromIndex(0);
-            
-            for (int i = 0; i < _particles.Count; i++)
+
+            if (_particles != null)
             {
-                var particle = _particles[i];
-                var color = Common.RandomColor(ran);
-                Gizmos.color = color;
-                
-                Gizmos.DrawWireSphere(particle.RigidBody.position, _minRadius);
-                Gizmos.DrawWireSphere(particle.RigidBody.position, _maxRadius);
-                Gizmos.DrawWireSphere(particle.RigidBody.position, Mathf.Lerp(_minRadius, _maxRadius, _desiredPercentBetweenMinMax));
+                Random ran = Random.CreateFromIndex(0);
+                for (int i = 0; i < _particles.Count; i++)
+                {
+                    var particle = _particles[i];
+                    var color = Common.RandomColor(ran);
+                    Gizmos.color = color;
+
+                    Gizmos.DrawWireSphere(particle.RigidBody.position, _minRadius);
+                    Gizmos.DrawWireSphere(particle.RigidBody.position, _maxRadius);
+                    Gizmos.DrawWireSphere(particle.RigidBody.position, Mathf.Lerp(_minRadius, _maxRadius, _desiredPercentBetweenMinMax));
+                }
             }
         }
     }
