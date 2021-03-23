@@ -4,6 +4,7 @@ Shader "Unlit/Clay04"
     {
         _MainTex ("Texture", 2D) = "white" {}
         _MinDistance  ("Min Distance Until Considered Hit", Float) = .1
+        _ParticleRadius  ("Particle Visual Radius", Float) = 2
     }
     SubShader
     {
@@ -28,24 +29,24 @@ Shader "Unlit/Clay04"
             struct v2f
             {
                 float4 vertex : SV_POSITION;
-                float4 fragPos : POSITION1;
+                float4 worldPos : POSITION1;
             };
 
             v2f vert (appdata input)
             {
                 v2f o;
                 o.vertex = UnityObjectToClipPos(input.vertex);
-                o.fragPos = mul(unity_ObjectToWorld, input.vertex);
+                o.worldPos = mul(unity_ObjectToWorld, input.vertex);
                 return o;
             }
             int _ParticlesLength;
-            float4 _ParticlesPosition[5];
+            float4 _Particles[5]; //where xyz == pos, and w == radius
             float _MinDistance;
+            float _ParticleRadius;
 
-      
             float signedDistToSphere(float3 origin, float3 spherePosition, float sphereRadius)
             {
-                float signedDistance = distance(origin, spherePosition) - sphereRadius;
+                const float signedDistance = distance(origin, spherePosition) - sphereRadius;
                 return signedDistance;
             }
             
@@ -54,7 +55,7 @@ Shader "Unlit/Clay04"
                 float minDist = 4096; //a big number
                 for (int i = 0; i < _ParticlesLength; i++)
                 {
-                    float currentDist = signedDistToSphere(position, _ParticlesPosition[i], 1);
+                    float currentDist = signedDistToSphere(position, _Particles[i].xyz, _ParticleRadius);
                     minDist = min(minDist, currentDist);
                 }
 
@@ -65,7 +66,7 @@ Shader "Unlit/Clay04"
             {
                 fixed4 color;
                 
-                float3 rayPos = input.fragPos;
+                float3 rayPos = input.worldPos;
                 float3 rayDir = normalize(rayPos - _WorldSpaceCameraPos);
 
                 for (int i = 0; i < 100; i++)

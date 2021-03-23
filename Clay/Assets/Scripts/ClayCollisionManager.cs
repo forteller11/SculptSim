@@ -31,8 +31,8 @@ namespace ClaySimulation
         [ShowInInspector] private Material _material;
 
         [SerializeField] [Range(0, 1)] private int _shaderTester;
-        private static readonly int ParticlesLength = Shader.PropertyToID("_ParticlesLength");
-        private static readonly int ParticlesPosition = Shader.PropertyToID("_ParticlesPosition");
+        private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
+        private static readonly int PARTICLES_UNIFORM = Shader.PropertyToID("_Particles");
 
         private void Start()
         {
@@ -125,10 +125,11 @@ namespace ClaySimulation
         {
             for (int i = 0; i < _particles.Count; i++)
             {
-                _particlePositions[i] = (Vector4) _particles[i].RigidBody.position;
+                var pos = _particles[i].RigidBody.position;
+                _particlePositions[i] = new Vector4(pos.x, pos.y, pos.z, _maxRadius);
             }
-            _material.SetVectorArray(ParticlesLength, _particlePositions);
-            _material.SetInt(ParticlesLength, _shaderTester);
+            _material.SetVectorArray(PARTICLES_UNIFORM, _particlePositions);
+            _material.SetInt(PARTICLES_LENGTH_UNIFORM, _shaderTester);
         }
         
 
