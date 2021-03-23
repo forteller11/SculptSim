@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
 namespace SpatialPartitioning
 {
     /* ---------------------
@@ -12,6 +13,9 @@ namespace SpatialPartitioning
     public struct OctNode
     {
         #region members
+
+        public Octree Tree;
+        
         public Vector3 Center;
         public float HalfWidth;
         
@@ -36,8 +40,10 @@ namespace SpatialPartitioning
         #endregion
 
         #region constructors
-        public OctNode(Vector3 center, float halfWidth)
+        public OctNode(Octree tree, Vector3 center, float halfWidth)
         {
+            Tree = tree;
+            
             Center = center;
             HalfWidth = halfWidth;
 
@@ -55,32 +61,18 @@ namespace SpatialPartitioning
             Node___ = -1;
        
         }
-
-        public static OctNode Empty()
-        {
-            var octNode = new OctNode();
-            
-            octNode.Center = Vector3.negativeInfinity;
-            octNode.HalfWidth = Single.NaN;
-            
-            octNode.NodeXYZ = -1;
-            octNode.Node_YZ = -1;
-            octNode.NodeX_Z = -1;
-            octNode.NodeXY_ = -1;
-            octNode.Node__Z = -1;
-            octNode.NodeX__ = -1;
-            octNode.Node_Y_ = -1;
-            octNode.Node___ = -1;
-            
-            octNode.FirstElementIndex = -1;
-
-            return octNode;
-        }
+        
         #endregion
         
-        void AddElement(Vector3 point, List<OctValue> values)
+        public void AddElement(Vector3 point, List<OctValue> values)
         {
+            //1) if is a leaf, just add....
             
+            //2) once surpasses that...
+            //create children
+            //give up ownership of elements to children
+            
+            //3) if already gave up elements, then just call .AddElement to appropriate child.
         }
         
         /// <summary>
@@ -107,17 +99,17 @@ namespace SpatialPartitioning
         
 
         /// <returns> did octnode already exist</returns>
-        bool SetOrCreateNodeAtIndex (ref int nodeIndex, OctNode value, List<OctNode> nodes)
+        bool SetOrCreateNodeAtIndex (ref int nodeIndex, OctNode value)
         {
             if (nodeIndex > -1) //if a valid index
             {
-                nodes[nodeIndex] = value;
+                Tree.Nodes[nodeIndex] = value;
                 return true;
             }
             else
             {
-                nodes.Add(value);
-                nodeIndex = nodes.Count - 1;
+                Tree.Nodes.Add(value);
+                nodeIndex = Tree.Nodes.Count - 1;
                 return false;
             }
         }
@@ -127,7 +119,7 @@ namespace SpatialPartitioning
         {
             if (nodeIndex > -1) //if a valid index
             {
-                value = Empty();
+                value = new OctNode(null, Vector3.negativeInfinity, Single.NaN);
                 return false;
             }
             else

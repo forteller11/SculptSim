@@ -12,7 +12,7 @@ namespace SpatialPartitioning
         public List<OctNode> Nodes;
         public List<OctValue> Values;
 
-        public Octree()
+        public void Init()
         {
             Nodes  = new List<OctNode> (128);
             Values = new List<OctValue>(1024);
@@ -20,13 +20,13 @@ namespace SpatialPartitioning
         
         public void ConstructTree(Vector3 worldPosition, float halfWidth, List<Vector3> particles)
         {
-            Nodes.Add(new OctNode(worldPosition, halfWidth));
+            Nodes.Add(new OctNode(this, worldPosition, halfWidth));
 
-            for (int i = 0; i < UPPER; i++)
+            for (int i = 0; i < particles.Count; i++)
             {
-                
+                Nodes[0].AddElement(particles[i]);
             }
-            //todo construct recursively
+          
         }
 
     }
