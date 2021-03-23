@@ -116,7 +116,7 @@ namespace SpatialPartitioning
             //if it doesn't exist, create new child
             if (childIndex < 0)
             {
-                childIndex = CreateChildFromOctant(octant);
+                childIndex = CreateChildNodeAtOctant(octant);
             }
             
             nodes[childIndex].InsertValueInSelfOrChildren(indexOfValue);
@@ -127,10 +127,31 @@ namespace SpatialPartitioning
         /// </summary>
         /// <param name="octant"></param>
         /// <returns>index of child in octnode array</returns>
-        int CreateChildFromOctant(int octant)
+        int CreateChildNodeAtOctant(int octant)
         {
-            //todo 
-            //create right octant with right center and halfwidth/2...
+            var tree = Tree;
+            var nodes = Tree.Nodes;
+            
+            var octantPosition = OctantToVector3Int(octant);
+            var quarterWidth = HalfWidth / 2;
+            var childOffset = (Vector3) octantPosition * quarterWidth;
+            var childPos = Center + childOffset;
+
+            var newOctNode = new OctNode(tree, childPos, quarterWidth);
+            
+            nodes.Add(newOctNode);
+
+            return nodes.Count - 1;
+        }
+
+        //returns values between [-1,-1,-1] and [1,1,1]
+        Vector3Int OctantToVector3Int(int octant)
+        {
+            int x = (octant & 0b_100) >> 2;
+            int y = (octant & 0b_010) >> 1;
+            int z = (octant & 0b_001) >> 0;
+            
+            return (new Vector3Int(x, y, z) * 2) - new Vector3Int(-1,-1,-1);
         }
         
         
