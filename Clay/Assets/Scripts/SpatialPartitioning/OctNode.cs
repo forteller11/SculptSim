@@ -11,18 +11,39 @@ namespace SpatialPartitioning
     [Serializable]
     public struct OctNode
     {
+        #region members
+        public Vector3 Center;
+        public float HalfWidth;
+        
+        public int FirstValueIndex;
+        public int ValueCount;
+        public bool IsLeaf;
+        
         /* -------------
         where XYZ == plus in those axis, and _ means minus in those axis
           > so XYZ is right, upper, forward AABB
           > while ___ is left, down, backwards AABB
           >  X__ is right, dowm, backwards AAB
         --------------------------- */
+        public int NodeXYZ;
+        public int Node_YZ;
+        public int NodeX_Z;
+        public int NodeXY_;
+        public int Node__Z;
+        public int NodeX__;
+        public int Node_Y_;
+        public int Node___;
+        #endregion
 
-        
+        #region constructors
         public OctNode(Vector3 center, float halfWidth)
         {
             Center = center;
             HalfWidth = halfWidth;
+
+            FirstValueIndex = -1;
+            ValueCount = 0;
+            IsLeaf = true;
             
             NodeXYZ = -1;
             Node_YZ = -1;
@@ -32,8 +53,7 @@ namespace SpatialPartitioning
             NodeX__ = -1;
             Node_Y_ = -1;
             Node___ = -1;
-            
-            FirstElementIndex = -1;
+       
         }
 
         public static OctNode Empty()
@@ -56,36 +76,34 @@ namespace SpatialPartitioning
 
             return octNode;
         }
-
-        public Vector3 Center;
-        public float HalfWidth;
+        #endregion
         
-        //change to point to lkist
-        public int NodeXYZ;
-        public int Node_YZ;
-        public int NodeX_Z;
-        public int NodeXY_;
-        public int Node__Z;
-        public int NodeX__;
-        public int Node_Y_;
-        public int Node___;
+        void AddElement(Vector3 point, List<OctValue> values)
+        {
+            
+        }
         
         /// <summary>
-        /// index in octree el array, -1 means no elements (not a leaf)
+        /// 
         /// </summary>
-        public int FirstElementIndex;
-
-        void SetChild(int octant, OctNode value, List<OctNode> nodes)
+        /// <param name="octant"></param>
+        /// <returns> returns -1 if no child exists, otherwise the index into the nodes element</returns>
+        int IndexFromOctant(int octant)
         {
             switch (octant)
             {
-                case 0b_111:
-                    NodeXYZ = nodes;
-                    
+                case 0b_111: return NodeXYZ;
+                case 0b_011: return Node_YZ;
+                case 0b_101: return NodeX_Z;
+                case 0b_110: return NodeXY_;
+                case 0b_001: return Node__Z;
+                case 0b_100: return NodeX__;
+                case 0b_010: return Node_Y_;
+                case 0b_000: return Node___;
+                default: throw new ArgumentException("octant must be between values 0 to 7!");
             }
-            
-     
         }
+
         
 
         /// <returns> did octnode already exist</returns>
@@ -104,6 +122,7 @@ namespace SpatialPartitioning
             }
         }
 
+       
         bool GetNodeAtIndex(int nodeIndex, out OctNode value, List<OctNode> nodes)
         {
             if (nodeIndex > -1) //if a valid index
