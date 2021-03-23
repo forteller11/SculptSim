@@ -1,11 +1,9 @@
-﻿using System;
+﻿
 using System.Collections.Generic;
-using System.Linq;
 using DefaultNamespace;
 using Sirenix.OdinInspector;
 using UnityEngine;
-using Unity.Mathematics;
-using UnityEngine.Rendering;
+using SpatialPartitioning;
 using Random =Unity.Mathematics.Random;
 
 
@@ -32,11 +30,10 @@ namespace ClaySimulation
         
         private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
         private static readonly int PARTICLES_UNIFORM = Shader.PropertyToID("_Particles");
+        [SerializeField] private Octree Octree;
 
         private void Start()
         {
-  
-            //var alreadyTheregameObject.GetComponentsInChildren<Clay>();
             _material = GetComponent<MeshRenderer>().material;
             
             _particles = new List<Clay>(_spawnOnStart);

@@ -1,11 +1,13 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
-namespace Octree
+namespace SpatialPartitioning
 {
     /* ---------------------
      * parent nodes will never contain elements,
      * leaf nodes will always contain elements
      --------------------*/
+    [Serializable]
     public struct OctNode
     {
         /* -------------
@@ -18,28 +20,20 @@ namespace Octree
         public Vector3 Center;
         public float HalfWidth;
         
-        public OctNode? NodeXYZ;
-        public OctNode? Node_YZ;
-        public OctNode? NodeX_Z;
-        public OctNode? NodeXY_;
-        public OctNode? Node__Z;
-        public OctNode? NodeX__;
-        public OctNode? Node_Y_;
-        public OctNode? Node___;
+        //change to point to lkist
+        public int NodeXYZ;
+        public int Node_YZ;
+        public int NodeX_Z;
+        public int NodeXY_;
+        public int Node__Z;
+        public int NodeX__;
+        public int Node_Y_;
+        public int Node___;
         
         /// <summary>
         /// index in octree el array, -1 means no elements (not a leaf)
         /// </summary>
-        public int ElementIndex;
-
-        public bool IsOverlapping(Vector3 point)
-        {
-            
-        }
+        public int FirstElementIndex;
         
-        // public bool GetOverlappingSubtree(Vector3 point)
-        // {
-        //     
-        // }
     }
 }

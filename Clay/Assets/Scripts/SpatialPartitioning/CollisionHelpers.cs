@@ -1,8 +1,8 @@
 ﻿using UnityEngine;
 
-namespace Octree
+namespace SpatialPartitioning
 {
-    public static class Common
+    public static class CollisionHelpers
     {
         public static bool AABBPointOverlap(Vector3 point, Vector3 boxCenter, float boxHalfWidth)
         {
