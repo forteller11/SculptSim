@@ -9,7 +9,7 @@ namespace SpatialPartitioning
         public Vector3 Position;
         public int NextElementIndex;
 
-        public static OctValue Tail(Vector3 value)
+        public static OctValue CreateTail(Vector3 value)
         {
             var octValue = new OctValue();
             octValue.Position = value;

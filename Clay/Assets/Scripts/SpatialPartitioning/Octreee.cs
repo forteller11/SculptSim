@@ -24,11 +24,15 @@ namespace SpatialPartitioning
 
             for (int i = 0; i < particles.Count; i++)
             {
-                var new 
-                Nodes[0].AddElement(particles[i]);
+                var octValue = OctValue.CreateTail(particles[i]);
+                Values.Add(octValue);
+                int indexOfAdded = Values.Count - 1;
+                Nodes[0].InsertValueInSelfOrChildren(indexOfAdded);
             }
           
         }
+        
+        
 
     }
 }

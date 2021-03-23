@@ -64,9 +64,19 @@ namespace SpatialPartitioning
         
         #endregion
         
-        public void AddElement(Vector3 point, OctValue value)
+        public void InsertValueInSelfOrChildren(int valueIndex)
         {
             //todo 
+            if (IsLeaf)
+            {
+                InsertValueInSelf(valueIndex);
+                //todo, if over count... place in children
+            }
+            //if not a leaf, find child and insert
+            else
+            {
+                InsertValueInChildren(valueIndex);
+            }
             //1) if is a leaf, just add....
             
             //2) once surpasses that...
@@ -76,55 +86,57 @@ namespace SpatialPartitioning
             //3) if already gave up elements, then just call .AddElement to appropriate child.
         }
 
-        void AppendElementAndLinkList(OctValue toAdd)
+        void InsertValueInSelf(int indexOfValue)
         {
             var values = Tree.Values;
-            
-            values.Add(toAdd);
-            int indexOfAdded = values.Count - 1;
 
             //if no elements currently in tree
             if (FirstValueIndex < 0)
             {
-                FirstValueIndex = indexOfAdded;
+                FirstValueIndex = indexOfValue;
             }
             //otherwise find last element and link to new element
             else
             {
                 var lastElementIndex = values[FirstValueIndex].GetLastElementIndex(FirstValueIndex, values);
                 var lastElement = values[lastElementIndex];
-                values[lastElementIndex] = OctValue.WithChild(lastElement.Position, indexOfAdded);
+                values[lastElementIndex] = OctValue.WithChild(lastElement.Position, indexOfValue);
+            }
+        }
+
+        void InsertValueInChildren(int indexOfValue)
+        {
+            var values = Tree.Values;
+            var nodes = Tree.Nodes;
+            
+            var point = values[indexOfValue].Position;
+            int octant = OctantFromAABBPoint(point);
+            int childIndex = ChildNodeIndexFromOctant(octant);
+            
+            //if it doesn't exist, create new child
+            if (childIndex < 0)
+            {
+                childIndex = CreateChildFromOctant(octant);
             }
             
-            //go through singly linked list...
-            
+            nodes[childIndex].InsertValueInSelfOrChildren(indexOfValue);
         }
-        
-        
         
         /// <summary>
         /// 
         /// </summary>
         /// <param name="octant"></param>
-        /// <returns> returns -1 if no child exists, otherwise the index into the nodes element</returns>
-        int IndexFromOctant(int octant)
+        /// <returns>index of child in octnode array</returns>
+        int CreateChildFromOctant(int octant)
         {
-            switch (octant)
-            {
-                case 0b_111: return NodeXYZ;
-                case 0b_011: return Node_YZ;
-                case 0b_101: return NodeX_Z;
-                case 0b_110: return NodeXY_;
-                case 0b_001: return Node__Z;
-                case 0b_100: return NodeX__;
-                case 0b_010: return Node_Y_;
-                case 0b_000: return Node___;
-                default: throw new ArgumentException("octant must be between values 0 to 7!");
-            }
+            //todo 
+            //create right octant with right center and halfwidth/2...
         }
-
+        
         
 
+        
+        
         /// <returns> did octnode already exist</returns>
         bool SetOrCreateNodeAtIndex (ref int nodeIndex, OctNode value)
         {
@@ -155,17 +167,46 @@ namespace SpatialPartitioning
                 return true;
             }
         }
-        
+
+        public int GetChildNodeIndexContainingPoint(Vector3 point)
+        {
+            int octant = OctantFromAABBPoint(point);
+            int child = ChildNodeIndexFromOctant(octant);
+            return child;
+        }
         
         /// <returns> returns number between 0-7 which represents what octant
         /// the largest bit represents x, middle represents y, smallest bit z</returns>
-        public static int AABBOctant(Vector3 point, Vector3 boxCenter)
+        public int OctantFromAABBPoint(Vector3 point)
         {
+            var boxCenter = Center;
+            
             int x = point.x > boxCenter.x ? 0b_100 : 0;
             int y = point.y > boxCenter.y ? 0b_010 : 0;
             int z = point.z > boxCenter.z ? 0b_001 : 0;
 
             return x | y | z;
+        }
+        
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="octant"></param>
+        /// <returns> returns -1 if no child exists, otherwise the index into the nodes element</returns>
+        int ChildNodeIndexFromOctant(int octant)
+        {
+            switch (octant)
+            {
+                case 0b_111: return NodeXYZ;
+                case 0b_011: return Node_YZ;
+                case 0b_101: return NodeX_Z;
+                case 0b_110: return NodeXY_;
+                case 0b_001: return Node__Z;
+                case 0b_100: return NodeX__;
+                case 0b_010: return Node_Y_;
+                case 0b_000: return Node___;
+                default: throw new ArgumentException("octant must be between values 0 to 7!");
+            }
         }
         
     }
