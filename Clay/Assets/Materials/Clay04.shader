@@ -43,18 +43,20 @@ Shader "Unlit/Clay04"
       
    
 
-            float signedDistToSphere(float3 origin, float3 spherePosition, float sphereRadius)
+            float signedDistToSphere(float3 position, float3 spherePosition, float sphereRadius)
             {
-                const float signedDistance = distance(origin, spherePosition) - sphereRadius;
+                const float signedDistance = distance(position, spherePosition) - sphereRadius;
                 return signedDistance;
             }
+           
 
             int _ParticlesLength;
             float4 _Particles[5]; //where xyz == pos
             float _MinDistance;
             float _ParticleRadius;
-            
-            float minDistToScene(float3 position)
+
+
+            float signedDistToScene(float3 position)
             {
                 float minDist = 4096; //a big number
                 for (int i = 0; i < _ParticlesLength; i++)
@@ -64,6 +66,16 @@ Shader "Unlit/Clay04"
                 }
 
                 return minDist;
+            }
+
+            //translated from: http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/
+            float3 estimateNormal(float3 p) {
+                const float EPISILON = 0.0001;
+                return normalize(float3(
+                    signedDistToScene(float3(p.x + EPISILON, p.y, p.z)) - signedDistToScene(float3(p.x - EPISILON, p.y, p.z)),
+                    signedDistToScene(float3(p.x, p.y + EPISILON, p.z)) - signedDistToScene(float3(p.x, p.y - EPISILON, p.z)),
+                    signedDistToScene(float3(p.x, p.y, p.z + EPISILON)) - signedDistToScene(float3(p.x, p.y, p.z - EPISILON))
+                ));
             }
             
             fixed4 frag (v2f input) : SV_Target
@@ -75,11 +87,12 @@ Shader "Unlit/Clay04"
 
                 for (int i = 0; i < 500; i++)
                 {
-                    const float minDistanceToScene = minDistToScene(rayPos);
+                    const float minDistanceToScene = signedDistToScene(rayPos);
                     
                     if (minDistanceToScene < _MinDistance)
                     {
-                        color = fixed4(0,1,0,1);
+                        float3 normal = estimateNormal(rayPos);
+                        color = fixed4(normal.xyz, 1);
                         return color;
                     }
 
