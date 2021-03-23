@@ -24,6 +24,7 @@ namespace SpatialPartitioning
 
             for (int i = 0; i < particles.Count; i++)
             {
+                var new 
                 Nodes[0].AddElement(particles[i]);
             }
           

@@ -64,8 +64,9 @@ namespace SpatialPartitioning
         
         #endregion
         
-        public void AddElement(Vector3 point, List<OctValue> values)
+        public void AddElement(Vector3 point, OctValue value)
         {
+            //todo 
             //1) if is a leaf, just add....
             
             //2) once surpasses that...
@@ -74,6 +75,32 @@ namespace SpatialPartitioning
             
             //3) if already gave up elements, then just call .AddElement to appropriate child.
         }
+
+        void AppendElementAndLinkList(OctValue toAdd)
+        {
+            var values = Tree.Values;
+            
+            values.Add(toAdd);
+            int indexOfAdded = values.Count - 1;
+
+            //if no elements currently in tree
+            if (FirstValueIndex < 0)
+            {
+                FirstValueIndex = indexOfAdded;
+            }
+            //otherwise find last element and link to new element
+            else
+            {
+                var lastElementIndex = values[FirstValueIndex].GetLastElementIndex(FirstValueIndex, values);
+                var lastElement = values[lastElementIndex];
+                values[lastElementIndex] = OctValue.WithChild(lastElement.Position, indexOfAdded);
+            }
+            
+            //go through singly linked list...
+            
+        }
+        
+        
         
         /// <summary>
         /// 
