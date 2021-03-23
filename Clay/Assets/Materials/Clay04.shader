@@ -9,6 +9,7 @@ Shader "Unlit/Clay04"
     SubShader
     {
         Tags { "RenderType"="Opaque" }
+        //todo AlphaBlending 
         LOD 100
 
         Pass
@@ -39,16 +40,19 @@ Shader "Unlit/Clay04"
                 o.worldPos = mul(unity_ObjectToWorld, input.vertex);
                 return o;
             }
-            int _ParticlesLength;
-            float4 _Particles[5]; //where xyz == pos, and w == radius
-            float _MinDistance;
-            float _ParticleRadius;
+      
+   
 
             float signedDistToSphere(float3 origin, float3 spherePosition, float sphereRadius)
             {
                 const float signedDistance = distance(origin, spherePosition) - sphereRadius;
                 return signedDistance;
             }
+
+            int _ParticlesLength;
+            float4 _Particles[5]; //where xyz == pos
+            float _MinDistance;
+            float _ParticleRadius;
             
             float minDistToScene(float3 position)
             {
@@ -69,7 +73,7 @@ Shader "Unlit/Clay04"
                 float3 rayPos = input.worldPos;
                 float3 rayDir = normalize(rayPos - _WorldSpaceCameraPos);
 
-                for (int i = 0; i < 100; i++)
+                for (int i = 0; i < 500; i++)
                 {
                     const float minDistanceToScene = minDistToScene(rayPos);
                     
@@ -80,12 +84,11 @@ Shader "Unlit/Clay04"
                     }
 
                     const float3 amountToMarch = minDistanceToScene * rayDir;
-                    rayPos += amountToMarch;
+                    rayPos +=  amountToMarch;
                 }
 
-                color = fixed4(1,0,0, 1);
-                
-                return color;
+                return fixed4(0,0,0,0);
+             
             }
             
 

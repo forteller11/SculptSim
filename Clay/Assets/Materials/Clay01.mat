@@ -91,9 +91,10 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 0
-    - _MinDistance: 0.1
+    - _MinDistance: 0.01
     - _OcclusionStrength: 1
     - _Parallax: 0.005
+    - _ParticleRadius: 0.1
     - _QueueOffset: 0
     - _ReceiveShadows: 1
     - _Smoothness: 0.5

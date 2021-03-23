@@ -29,8 +29,7 @@ namespace ClaySimulation
         [ShowInInspector] private List<Vector3> _particlesToMove;
         [ShowInInspector] private List<Vector4> _particlePositions;
         [ShowInInspector] private Material _material;
-
-        [SerializeField] [Range(0, 1)] private int _shaderTester;
+        
         private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
         private static readonly int PARTICLES_UNIFORM = Shader.PropertyToID("_Particles");
 
@@ -109,6 +108,7 @@ namespace ClaySimulation
             {
                 var pos = _particles[i].transform.position;
                 var newPos = pos + _particlesToMove[i];
+
                 _particles[i].RigidBody.MovePosition(newPos);
                 _particlesToMove[i] = Vector3.zero;
             }
@@ -118,7 +118,6 @@ namespace ClaySimulation
         private void Update()
         {
             SendParticlesToShader();
-            // RenderPipelineManager.beginCameraRendering += 
         }
 
         private void SendParticlesToShader()
@@ -126,10 +125,11 @@ namespace ClaySimulation
             for (int i = 0; i < _particles.Count; i++)
             {
                 var pos = _particles[i].RigidBody.position;
-                _particlePositions[i] = new Vector4(pos.x, pos.y, pos.z, _maxRadius);
+                _particlePositions[i] = new Vector4(pos.x, pos.y, pos.z, 0);
             }
+            
             _material.SetVectorArray(PARTICLES_UNIFORM, _particlePositions);
-            _material.SetInt(PARTICLES_LENGTH_UNIFORM, _shaderTester);
+            _material.SetInt(PARTICLES_LENGTH_UNIFORM, _particlePositions.Count);
         }
         
 

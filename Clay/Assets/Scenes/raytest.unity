@@ -474,8 +474,8 @@ MonoBehaviour:
   _spawnOnStart: 5
   _radiusToSpawnIn: 1
   _minRadius: 0.0625
-  _maxRadius: 0.3
-  _desiredPercentBetweenMinMax: 0.7
+  _maxRadius: 0.5
+  _desiredPercentBetweenMinMax: 0.6
   _constantMultiplier: 0.05
   _forceMultiplierCurve:
     serializedVersion: 2
@@ -510,7 +510,6 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  _shaderTester: 1
 --- !u!4 &789098179
 Transform:
   m_ObjectHideFlags: 0
