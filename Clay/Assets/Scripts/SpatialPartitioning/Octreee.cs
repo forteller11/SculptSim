@@ -33,8 +33,6 @@ namespace SpatialPartitioning
             Values.Add(octValue);
             int indexOfAdded = Values.Count - 1;
             Nodes[0].InsertValueInSelfOrChildren(indexOfAdded);
-            //todo methods change temporary value for some reason... make sure they all effect final array
-            //make methods even less oop and more functional.... entities??
         }
         
     }

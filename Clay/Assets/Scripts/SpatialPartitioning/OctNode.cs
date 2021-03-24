@@ -9,18 +9,18 @@ namespace SpatialPartitioning
      * parent nodes will never contain elements,
      * leaf nodes will always contain elements
      --------------------*/
-    public struct OctNode
+    public class OctNode
     {
         #region members
 
         public Octree Tree;
 
         //todo solution??
-        public int Index;
+        // public int Index;
         public Vector3 Center;
         public float HalfWidth;
         
-        public int FirstValueIndex;
+        public OctValue FirstValue;
         public int ValueCount;
         public bool IsLeaf;
         public int Depth;
@@ -50,7 +50,7 @@ namespace SpatialPartitioning
             HalfWidth = halfWidth;
             Depth = depth;
 
-            FirstValueIndex = -1;
+            FirstValue = -1;
             ValueCount = 0;
             IsLeaf = true;
             
@@ -66,7 +66,7 @@ namespace SpatialPartitioning
         
         #endregion
         
-        public void InsertValueInSelfOrChildren(int valueIndex)
+        public OctNode InsertValueInSelfOrChildren(OctValue value)
         {
             
             if (IsLeaf ||
@@ -82,14 +82,16 @@ namespace SpatialPartitioning
                     IsLeaf = false;
                     
                     var values = Tree.Values;
-                    int currentValueIndex = FirstValueIndex;
+                    int currentValueIndex = FirstValue;
                     
-                    while (currentValueIndex > -1)
+                    while (value != null)
                     {
                         var currentValue = values[currentValueIndex];
                         currentValueIndex = currentValue.NextElementIndex;
                         InsertValueInChildren(valueIndex);
                     }
+
+                    FirstValue = null;
                 }
 
             }
@@ -98,6 +100,8 @@ namespace SpatialPartitioning
             {
                 InsertValueInChildren(valueIndex);
             }
+
+            return this;
         }
 
         
@@ -106,14 +110,14 @@ namespace SpatialPartitioning
             var values = Tree.Values;
 
             //if no elements currently in tree
-            if (FirstValueIndex < 0)
+            if (FirstValue < 0)
             {
-                FirstValueIndex = indexOfValue;
+                FirstValue = indexOfValue;
             }
             //otherwise find last element and link to new element
             else
             {
-                var lastElementIndex = values[FirstValueIndex].GetLastElementIndex(FirstValueIndex, values);
+                var lastElementIndex = values[FirstValue].GetLastElementIndex(FirstValue, values);
                 var lastElement = values[lastElementIndex];
                 values[lastElementIndex] = OctValue.WithChild(lastElement.Position, indexOfValue);
             }
@@ -129,12 +133,13 @@ namespace SpatialPartitioning
             
             var point = values[indexOfValue].Position;
             int octant = OctantFromAABBPoint(point);
-            int childIndex = ChildNodeIndexFromOctant(octant);
+            int childIndex = GetChildNodeIndexFromOctant(octant);
             
             //if it doesn't exist, create new child
             if (childIndex < 0)
             {
                 childIndex = CreateChildNodeAtOctant(octant);
+                SetChildNodeIndexFromOctant(octant, childIndex);
             }
             
             nodes[childIndex].InsertValueInSelfOrChildren(indexOfValue);
@@ -161,71 +166,22 @@ namespace SpatialPartitioning
 
             return nodes.Count - 1;
         }
-        
-        
-        /// <summary>
-        /// perform action for each value
-        /// </summary>
-        /// <param name="action"> int == index of current oct value, octValue == current oct value</param>
-        void ForEachValue(Action<int, OctValue> action)
-        {
-            var values = Tree.Values;
-            int currentValueIndex = FirstValueIndex;
-            
-            while (currentValueIndex > -1)
-            {
-                var currentValue = values[currentValueIndex];
-                action.Invoke(currentValueIndex, currentValue);
-                currentValueIndex = currentValue.NextElementIndex;
-            }
-      
-        }
 
-        
         ///<returns>returns values between [-1,-1,-1] and [1,1,1]</returns>
         Vector3Int OctantToVector3Int(int octant)
         {
             int x = (octant & 0b_100) >> 2;
             int y = (octant & 0b_010) >> 1;
             int z = (octant & 0b_001) >> 0;
-            
-            return (new Vector3Int(x, y, z) * 2) - new Vector3Int(-1,-1,-1);
+
+            var vec = (new Vector3Int(x, y, z));
+            var scaledBetweenOneAndMinusOne = (vec * 2) - new Vector3Int(-1, -1, -1);
+            //todo debug
+            return scaledBetweenOneAndMinusOne;
         }
         
         
-
         
-        
-        /// <returns> did octnode already exist</returns>
-        bool SetOrCreateNodeAtIndex (ref int nodeIndex, OctNode value)
-        {
-            if (nodeIndex > -1) //if a valid index
-            {
-                Tree.Nodes[nodeIndex] = value;
-                return true;
-            }
-            else
-            {
-                Tree.Nodes.Add(value);
-                nodeIndex = Tree.Nodes.Count - 1;
-                return false;
-            }
-        }
-
-       
-        // bool GetNodeAtIndex(int nodeIndex, out OctNode value, List<OctNode> nodes)
-        // {
-        //     if (nodeIndex > -1) //if a valid index
-        //     {
-        //         value = new OctNode(null, -1, Vector3.negativeInfinity, Single.NaN);
-        //         return false;
-        //     }
-        //     else
-        //     {
-        //         value = nodes[nodeIndex];
-        //         return true;
-        //     }
-        // }
         //
         // public int GetChildNodeIndexContainingPoint(Vector3 point)
         // {
@@ -252,7 +208,7 @@ namespace SpatialPartitioning
         /// </summary>
         /// <param name="octant"></param>
         /// <returns> returns -1 if no child exists, otherwise the index into the nodes element</returns>
-        int ChildNodeIndexFromOctant(int octant)
+        int GetChildNodeIndexFromOctant(int octant)
         {
             switch (octant)
             {
@@ -264,6 +220,22 @@ namespace SpatialPartitioning
                 case 0b_100: return NodeX__;
                 case 0b_010: return Node_Y_;
                 case 0b_000: return Node___;
+                default: throw new ArgumentException("octant must be between values 0 to 7!");
+            }
+        }
+        
+        void SetChildNodeIndexFromOctant(int octant, int value)
+        {
+            switch (octant)
+            {
+                case 0b_111: NodeXYZ = value; return;
+                case 0b_011: Node_YZ = value; return;
+                case 0b_101: NodeX_Z = value; return;
+                case 0b_110: NodeXY_ = value; return;
+                case 0b_001: Node__Z = value; return;
+                case 0b_100: NodeX__ = value; return;
+                case 0b_010: Node_Y_ = value; return;
+                case 0b_000: Node___ = value; return;
                 default: throw new ArgumentException("octant must be between values 0 to 7!");
             }
         }

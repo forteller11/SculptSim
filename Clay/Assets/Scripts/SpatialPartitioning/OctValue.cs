@@ -3,47 +3,39 @@ using UnityEngine;
 
 namespace SpatialPartitioning
 {
-    public struct OctValue
+    public class OctValue
     {
         public Vector3 Position;
-        public int NextElementIndex;
+        public OctValue NextValue;
 
         public static OctValue CreateTail(Vector3 value)
         {
             var octValue = new OctValue();
             octValue.Position = value;
-            octValue.NextElementIndex = -1;
+            octValue.NextValue = null;
             return octValue;
         }
         
-        public static OctValue WithChild(Vector3 value, int childIndex)
+        public static OctValue WithChild(Vector3 value, OctValue child)
         {
             var octValue = new OctValue();
             octValue.Position = value;
-            octValue.NextElementIndex = childIndex;
+            octValue.NextValue = child;
             return octValue;
         }
         
-        public int GetLastElementIndex(int currentIndex, List<OctValue> values)
+        public OctValue GetLastElement()
         {
-            if (NextElementIndex > -1)
-                return values[NextElementIndex].GetLastElementIndex(NextElementIndex, values);
-            return currentIndex;
-        }
-
-        bool GetNext(List<OctValue> values, out OctValue next)
-        {
-            if (NextElementIndex > -1)
+            if (NextValue == null)
             {
-                next = values[NextElementIndex];
-                return true;
+                return this;
             }
             else
             {
-                next = new OctValue();
-                return false;
+                return NextValue.GetLastElement();
             }
         }
+        
 
     }
 }
