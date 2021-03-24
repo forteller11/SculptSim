@@ -12,7 +12,7 @@ namespace SpatialPartitioning
         public List<OctValue> Values;
 
         public int MaxDepth = 2;
-        public int MaxValuesPerNode = 8; 
+        public int MaxValuesPerNode = 3; 
 
         public Octree()
         {
@@ -29,10 +29,9 @@ namespace SpatialPartitioning
 
         public void Insert(Vector3 point)
         {
-            var octValue = OctValue.CreateTail(point);
+            var octValue = OctValue.CreateTail(Values.Count.ToString(), point);
             Values.Add(octValue);
-            int indexOfAdded = Values.Count - 1;
-            Nodes[0].InsertValueInSelfOrChildren(indexOfAdded);
+            Nodes[0].InsertValueInSelfOrChildren(octValue);
         }
         
     }

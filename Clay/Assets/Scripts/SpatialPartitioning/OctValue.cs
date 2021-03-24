@@ -7,35 +7,20 @@ namespace SpatialPartitioning
     {
         public Vector3 Position;
         public OctValue NextValue;
+        public string Name;
 
-        public static OctValue CreateTail(Vector3 value)
+        public static OctValue CreateTail(string name, Vector3 value)
         {
             var octValue = new OctValue();
+            octValue.Name = name;
             octValue.Position = value;
             octValue.NextValue = null;
             return octValue;
         }
-        
-        public static OctValue WithChild(Vector3 value, OctValue child)
-        {
-            var octValue = new OctValue();
-            octValue.Position = value;
-            octValue.NextValue = child;
-            return octValue;
-        }
-        
-        public OctValue GetLastElement()
-        {
-            if (NextValue == null)
-            {
-                return this;
-            }
-            else
-            {
-                return NextValue.GetLastElement();
-            }
-        }
-        
 
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }
