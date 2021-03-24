@@ -14,7 +14,9 @@ namespace SpatialPartitioning
         #region members
 
         public Octree Tree;
-        
+
+        //todo solution??
+        public int Index;
         public Vector3 Center;
         public float HalfWidth;
         
