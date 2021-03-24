@@ -34,8 +34,11 @@ namespace ClaySimulation
 
         private void Start()
         {
+            
+            
             _material = GetComponent<MeshRenderer>().material;
             
+            #region particles
             _particles = new List<Clay>(_spawnOnStart);
             var random = Random.CreateFromIndex((uint)System.DateTime.Now.Millisecond);
             for (int i = 0; i < _spawnOnStart; i++)
@@ -55,7 +58,16 @@ namespace ClaySimulation
             
             _particlePositions = new List<Vector4>(_particles.Count);
             for (int i = 0; i < _particles.Count; i++)
-                _particlePositions.Add(Vector4.zero);
+                _particlePositions.Add(new Vector4(0,0,0, 0));
+            #endregion
+            
+            Octree = new Octree();
+            Octree.CleanAndPrepareForInsertion(transform.position, _radiusToSpawnIn*2);
+            for (int i = 0; i < _particles.Count; i++)
+            {
+                var p = _particles[i].RigidBody.position;
+                Octree.Insert(new Vector3(p.x, p.y, p.z));
+            }
         }
 
         private void FixedUpdate()
@@ -114,22 +126,26 @@ namespace ClaySimulation
 
         private void Update()
         {
-            SendParticlesToShader();
+            // SendParticlesToShader();
         }
 
         private void SendParticlesToShader()
         {
             for (int i = 0; i < _particles.Count; i++)
             {
-                var pos = _particles[i].RigidBody.position;
-                _particlePositions[i] = new Vector4(pos.x, pos.y, pos.z, 0);
+                var p = _particles[i].RigidBody.position;
+                _particlePositions[i] = new Vector4(p.x, p.y, p.z, 0);
             }
             
             _material.SetVectorArray(PARTICLES_UNIFORM, _particlePositions);
             _material.SetInt(PARTICLES_LENGTH_UNIFORM, _particlePositions.Count);
         }
-        
 
+        [Button] 
+        void InsertPoint(Vector3 point)
+        {
+            Octree.Insert(point);
+        }
         private void OnDrawGizmosSelected()
         {
 
@@ -145,6 +161,31 @@ namespace ClaySimulation
                     Gizmos.DrawWireSphere(particle.RigidBody.position, _minRadius);
                     Gizmos.DrawWireSphere(particle.RigidBody.position, _maxRadius);
                     Gizmos.DrawWireSphere(particle.RigidBody.position, Mathf.Lerp(_minRadius, _maxRadius, _desiredPercentBetweenMinMax));
+                }
+            }
+
+            if (Octree != null)
+            {
+                Random ran = Random.CreateFromIndex(200);
+                for (int i = 0; i < Octree.Nodes.Count; i++)
+                {
+                    var nodes = Octree.Nodes;
+                    var width = nodes[i].HalfWidth * 2;
+                    
+                    var color = Common.RandomColor(ran);
+                    Gizmos.color = color;
+                    Gizmos.DrawWireCube(nodes[i].Center, new Vector3(width, width, width));
+                }
+                
+                
+                ran = Random.CreateFromIndex(1234);
+                for (int i = 0; i < Octree.Values.Count; i++)
+                {
+                    var values = Octree.Values;
+
+                    var color = Common.RandomColor(ran, 0.5f);
+                    Gizmos.color = color;
+                    Gizmos.DrawSphere(values[i].Position, .1f);
                 }
             }
         }

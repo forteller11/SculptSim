@@ -6,33 +6,34 @@ using UnityEngine;
 
 namespace SpatialPartitioning
 {
-    [Serializable]
     public class Octree
     {
         public List<OctNode> Nodes;
         public List<OctValue> Values;
 
-        public void Init()
+        public int MaxDepth = 2;
+        public int MaxValuesPerNode = 8; 
+
+        public Octree()
         {
             Nodes  = new List<OctNode> (128);
             Values = new List<OctValue>(1024);
         }
-        
-        public void ConstructTree(Vector3 worldPosition, float halfWidth, List<Vector3> particles)
-        {
-            Nodes.Add(new OctNode(this, worldPosition, halfWidth));
 
-            for (int i = 0; i < particles.Count; i++)
-            {
-                var octValue = OctValue.CreateTail(particles[i]);
-                Values.Add(octValue);
-                int indexOfAdded = Values.Count - 1;
-                Nodes[0].InsertValueInSelfOrChildren(indexOfAdded);
-            }
-          
+        public void CleanAndPrepareForInsertion(Vector3 worldPosition, float halfWidth)
+        {
+            Nodes.Clear();
+            Values.Clear();
+            Nodes.Add(new OctNode(this, 0, worldPosition, halfWidth));
+        }
+
+        public void Insert(Vector3 point)
+        {
+            var octValue = OctValue.CreateTail(point);
+            Values.Add(octValue);
+            int indexOfAdded = Values.Count - 1;
+            Nodes[0].InsertValueInSelfOrChildren(indexOfAdded);
         }
         
-        
-
     }
 }

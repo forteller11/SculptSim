@@ -9,7 +9,6 @@ namespace SpatialPartitioning
      * parent nodes will never contain elements,
      * leaf nodes will always contain elements
      --------------------*/
-    [Serializable]
     public struct OctNode
     {
         #region members
@@ -22,7 +21,8 @@ namespace SpatialPartitioning
         public int FirstValueIndex;
         public int ValueCount;
         public bool IsLeaf;
-        
+        public int Depth;
+
         /* -------------
         where XYZ == plus in those axis, and _ means minus in those axis
           > so XYZ is right, upper, forward AABB
@@ -40,12 +40,13 @@ namespace SpatialPartitioning
         #endregion
 
         #region constructors
-        public OctNode(Octree tree, Vector3 center, float halfWidth)
+        public OctNode(Octree tree, int depth, Vector3 center, float halfWidth)
         {
             Tree = tree;
             
             Center = center;
             HalfWidth = halfWidth;
+            Depth = depth;
 
             FirstValueIndex = -1;
             ValueCount = 0;
@@ -59,31 +60,30 @@ namespace SpatialPartitioning
             NodeX__ = -1;
             Node_Y_ = -1;
             Node___ = -1;
-       
         }
         
         #endregion
         
         public void InsertValueInSelfOrChildren(int valueIndex)
         {
-            //todo 
-            if (IsLeaf)
+            
+            if (IsLeaf ||
+                Depth > Tree.MaxDepth)
             {
                 InsertValueInSelf(valueIndex);
-                //todo, if over count... place in children
+                if (ValueCount > Tree.MaxValuesPerNode)
+                {
+                    IsLeaf = false;
+                    //todo, give up ownership and redistribute values to children
+                }
+
             }
             //if not a leaf, find child and insert
             else
             {
                 InsertValueInChildren(valueIndex);
             }
-            //1) if is a leaf, just add....
-            
-            //2) once surpasses that...
-            //create children
-            //give up ownership of elements to children
-            
-            //3) if already gave up elements, then just call .AddElement to appropriate child.
+
         }
 
         void InsertValueInSelf(int indexOfValue)
@@ -102,6 +102,8 @@ namespace SpatialPartitioning
                 var lastElement = values[lastElementIndex];
                 values[lastElementIndex] = OctValue.WithChild(lastElement.Position, indexOfValue);
             }
+
+            ValueCount++;
         }
 
         void InsertValueInChildren(int indexOfValue)
@@ -137,14 +139,15 @@ namespace SpatialPartitioning
             var childOffset = (Vector3) octantPosition * quarterWidth;
             var childPos = Center + childOffset;
 
-            var newOctNode = new OctNode(tree, childPos, quarterWidth);
+            var newOctNode = new OctNode(tree, Depth + 1, childPos, quarterWidth);
             
             nodes.Add(newOctNode);
 
             return nodes.Count - 1;
         }
 
-        //returns values between [-1,-1,-1] and [1,1,1]
+        
+        ///<returns>returns values between [-1,-1,-1] and [1,1,1]</returns>
         Vector3Int OctantToVector3Int(int octant)
         {
             int x = (octant & 0b_100) >> 2;
@@ -175,26 +178,26 @@ namespace SpatialPartitioning
         }
 
        
-        bool GetNodeAtIndex(int nodeIndex, out OctNode value, List<OctNode> nodes)
-        {
-            if (nodeIndex > -1) //if a valid index
-            {
-                value = new OctNode(null, Vector3.negativeInfinity, Single.NaN);
-                return false;
-            }
-            else
-            {
-                value = nodes[nodeIndex];
-                return true;
-            }
-        }
-
-        public int GetChildNodeIndexContainingPoint(Vector3 point)
-        {
-            int octant = OctantFromAABBPoint(point);
-            int child = ChildNodeIndexFromOctant(octant);
-            return child;
-        }
+        // bool GetNodeAtIndex(int nodeIndex, out OctNode value, List<OctNode> nodes)
+        // {
+        //     if (nodeIndex > -1) //if a valid index
+        //     {
+        //         value = new OctNode(null, -1, Vector3.negativeInfinity, Single.NaN);
+        //         return false;
+        //     }
+        //     else
+        //     {
+        //         value = nodes[nodeIndex];
+        //         return true;
+        //     }
+        // }
+        //
+        // public int GetChildNodeIndexContainingPoint(Vector3 point)
+        // {
+        //     int octant = OctantFromAABBPoint(point);
+        //     int child = ChildNodeIndexFromOctant(octant);
+        //     return child;
+        // }
         
         /// <returns> returns number between 0-7 which represents what octant
         /// the largest bit represents x, middle represents y, smallest bit z</returns>
