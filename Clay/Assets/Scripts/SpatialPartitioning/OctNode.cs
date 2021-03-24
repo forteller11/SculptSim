@@ -71,10 +71,23 @@ namespace SpatialPartitioning
                 Depth > Tree.MaxDepth)
             {
                 InsertValueInSelf(valueIndex);
-                if (ValueCount > Tree.MaxValuesPerNode)
+                
+                //if exceeded maxium allowed values, redistribute values into children
+                //this node is no longer a leaf
+                if (ValueCount > Tree.MaxValuesPerNode && 
+                    Depth <= Tree.MaxDepth)
                 {
                     IsLeaf = false;
-                    //todo, give up ownership and redistribute values to children
+                    
+                    var values = Tree.Values;
+                    int currentValueIndex = FirstValueIndex;
+                    
+                    while (currentValueIndex > -1)
+                    {
+                        var currentValue = values[currentValueIndex];
+                        currentValueIndex = currentValue.NextElementIndex;
+                        InsertValueInChildren(valueIndex);
+                    }
                 }
 
             }
@@ -83,9 +96,9 @@ namespace SpatialPartitioning
             {
                 InsertValueInChildren(valueIndex);
             }
-
         }
 
+        
         void InsertValueInSelf(int indexOfValue)
         {
             var values = Tree.Values;
@@ -105,7 +118,8 @@ namespace SpatialPartitioning
 
             ValueCount++;
         }
-
+        
+        /// <remarks> creates new children as necessary</remarks>
         void InsertValueInChildren(int indexOfValue)
         {
             var values = Tree.Values;
@@ -144,6 +158,25 @@ namespace SpatialPartitioning
             nodes.Add(newOctNode);
 
             return nodes.Count - 1;
+        }
+        
+        
+        /// <summary>
+        /// perform action for each value
+        /// </summary>
+        /// <param name="action"> int == index of current oct value, octValue == current oct value</param>
+        void ForEachValue(Action<int, OctValue> action)
+        {
+            var values = Tree.Values;
+            int currentValueIndex = FirstValueIndex;
+            
+            while (currentValueIndex > -1)
+            {
+                var currentValue = values[currentValueIndex];
+                action.Invoke(currentValueIndex, currentValue);
+                currentValueIndex = currentValue.NextElementIndex;
+            }
+      
         }
 
         
