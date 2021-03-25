@@ -24,8 +24,7 @@ namespace SpatialPartitioning
         public int ValueCount;
         public bool IsLeaf;
         public int Depth;
-
-        private static List<OctValue> _temporaryCache = new List<OctValue>(8);
+        
 
         /* -------------
         where XYZ == plus in those axis, and _ means minus in those axis
@@ -76,21 +75,18 @@ namespace SpatialPartitioning
                     //copy linked-list into array
                     //this is because now the connections are implicit and can be traversed while manipulating the connections of the linked list
                     OctValue currentValue = FirstValue;
-                    _temporaryCache.Clear();
                     while (currentValue != null)
                     {
-                        _temporaryCache.Add(currentValue);
-                        //make current value next null, but then not before assign current value to it
+                        
                         var nextValue = currentValue.NextValue;
                         currentValue.NextValue = null;
+                        
+                        InsertValueInChildren(currentValue);
+                        
                         currentValue = nextValue;
                     }
                     
-                    //redistribute values to children from array
-                    for (int i = 0; i < _temporaryCache.Count; i++)
-                    {
-                        InsertValueInChildren(_temporaryCache[i]);
-                    }
+                
 
                     FirstValue = null;
                 }
