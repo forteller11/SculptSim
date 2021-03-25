@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using ClaySimulation;
+using Collision;
 using SpatialPartitioning;
 using Unity.Collections;
 using UnityEngine;
@@ -38,8 +40,7 @@ namespace SpatialPartitioning
 
         //todo solution??
         // public int Index;
-        public Vector3 Center;
-        public float HalfWidth;
+        public AABB AABB;
         
         public OctValue FirstValue;
         public int ValueCount;
@@ -57,12 +58,10 @@ namespace SpatialPartitioning
         #endregion
 
         #region constructors
-        public OctNode(Octree tree, int depth, Vector3 center, float halfWidth)
+        public OctNode(Octree tree, int depth, AABB aabb)
         {
             Tree = tree;
-            
-            Center = center;
-            HalfWidth = halfWidth;
+            AABB = aabb;
             Depth = depth;
             
             ValueCount = 0;
@@ -198,13 +197,13 @@ namespace SpatialPartitioning
         {
             var tree = Tree;
             var nodes = Tree.Nodes;
-            //todo octantpos/2 maybe?
+            
             var octantPosition = OctantToVector3Int(octant);
-            var quarterWidth = HalfWidth / 2;
+            var quarterWidth = AABB.HalfWidth / 2;
             var childOffset = (Vector3) octantPosition * quarterWidth;
-            var childPos = Center + childOffset;
+            var childPos = AABB.Center + childOffset;
 
-            var newOctNode = new OctNode(tree, Depth + 1, childPos, quarterWidth);
+            var newOctNode = new OctNode(tree, Depth + 1, new AABB(childPos, quarterWidth));
             
             nodes.Add(newOctNode);
             SetChildNodeFromOctant(octant, newOctNode);
@@ -229,14 +228,30 @@ namespace SpatialPartitioning
         /// the largest bit represents x, middle represents y, smallest bit z</returns>
         public Octant OctantAtPosition(Vector3 point)
         {
-            var boxCenter = Center;
-            
-            Octant x = point.x > boxCenter.x ? Octant.X__ : 0;
-            Octant y = point.y > boxCenter.y ? Octant._Y_ : 0;
-            Octant z = point.z > boxCenter.z ? Octant.__Z : 0;
+
+            Octant x = point.x > AABB.Center.x ? Octant.X__ : 0;
+            Octant y = point.y > AABB.Center.y ? Octant._Y_ : 0;
+            Octant z = point.z > AABB.Center.z ? Octant.__Z : 0;
 
             return x | y | z;
         }
+        
+        /// <returns> returns number between 0-7 which represents what octant
+        /// the largest bit represents x, middle represents y, smallest bit z</returns>
+        public List<OctNode> ChildrenInsideSphere(Sphere sphere)
+        {
+            //todo convert to struct then native list NativeList<OctNode>(Allocator.Temp);
+            List<OctNode> results = new List<OctNode>();
+            ForEachChild((child) =>
+            {
+                if (Common.SphereAABBOverlap(sphere, AABB))
+                {
+                    results.Add(child);
+                }
+            });
+            return results;
+        }
+        
         
         // public NativeArray<int> OctantsAtPosition(Vector3 point)
         // {

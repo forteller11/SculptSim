@@ -1,10 +1,10 @@
 ﻿
 using System.Collections.Generic;
-using DefaultNamespace;
+using Collision;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using SpatialPartitioning;
-using Random =Unity.Mathematics.Random;
+using Random = Unity.Mathematics.Random;
 
 
 namespace ClaySimulation
@@ -62,7 +62,7 @@ namespace ClaySimulation
             #endregion
             
             Octree = new Octree();
-            Octree.CleanAndPrepareForInsertion(transform.position, _radiusToSpawnIn*2);
+            Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn*2));
             for (int i = 0; i < _particles.Count; i++)
             {
                 var p = _particles[i].RigidBody.position;
@@ -170,14 +170,14 @@ namespace ClaySimulation
                 for (int i = 0; i < Octree.Nodes.Count; i++)
                 {
                     var nodes = Octree.Nodes;
-                    var width = nodes[i].HalfWidth * 2;
+                    var width = nodes[i].AABB.HalfWidth * 2;
                     
                     var color = Common.RandomColor(ref ran);
                     Gizmos.color = color;
                     
-                    Gizmos.DrawWireCube(nodes[i].Center, new Vector3(width, width, width));
+                    Gizmos.DrawWireCube(nodes[i].AABB.Center, new Vector3(width, width, width));
                     float offset = 0.995f;
-                    Gizmos.DrawWireCube(nodes[i].Center, new Vector3(width, width, width) * offset);
+                    Gizmos.DrawWireCube(nodes[i].AABB.Center, new Vector3(width, width, width) * offset);
 
                     OctValue currentVal = nodes[i].FirstValue;
                     while (currentVal != null)

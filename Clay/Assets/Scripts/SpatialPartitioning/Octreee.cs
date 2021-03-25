@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using Collision;
 using SpatialPartitioning;
 using UnityEngine;
 
@@ -20,11 +21,11 @@ namespace SpatialPartitioning
             Values = new List<OctValue>(1024);
         }
 
-        public void CleanAndPrepareForInsertion(Vector3 worldPosition, float halfWidth)
+        public void CleanAndPrepareForInsertion(AABB aabb)
         {
             Nodes.Clear();
             Values.Clear();
-            Nodes.Add(new OctNode(this, 0, worldPosition, halfWidth));
+            Nodes.Add(new OctNode(this, 0, aabb));
         }
 
         public void Insert(Vector3 point)
@@ -34,23 +35,31 @@ namespace SpatialPartitioning
             Nodes[0].InsertValueInSelfOrChildren(octValue);
         }
 
-        // public bool GetNeighors(Vector3 point, List<Vector3> results)
-        // {
-        //     OctNode currentQuad = Nodes[0];
-        //     while (!currentQuad.IsLeaf)
-        //     {
-        //         currentQuad = currentQuad.GetChildFromPoint(point);
-        //     }
-        //     
-        //     currentQuad.ForEach(value =>
-        //     {
-        //         results.Add(value.Position);
-        //     });
-        //     
-        //     //todo get radius
-        //
-        //     return results.Count > 0;
-        // }
+        public bool GetNeighors(Sphere sphere, List<Vector3> results)
+        {
+            OctNode currentQuad = Nodes[0];
+            while (!currentQuad.IsLeaf)
+            {
+                var children = currentQuad.ChildrenInsideSphere(sphere);
+
+                for (int i = 0; i < children; i++)
+                {
+                    //if leaf... add to results, otherwise, recursively go init...
+                    children.ChildrenInsideSphere();
+                    
+                    //todo make this part recursive
+                }
+            }
+            
+            currentQuad.ForEachValue(value =>
+            {
+                results.Add(value.Position);
+            });
+            
+            //todo get radius
+        
+            return results.Count > 0;
+        }
         
     }
 }
