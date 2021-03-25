@@ -25,6 +25,8 @@ namespace SpatialPartitioning
         public bool IsLeaf;
         public int Depth;
 
+        private static List<OctValue> _temporaryCache = new List<OctValue>(8);
+
         /* -------------
         where XYZ == plus in those axis, and _ means minus in those axis
           > so XYZ is right, upper, forward AABB
@@ -52,7 +54,6 @@ namespace SpatialPartitioning
             
             ValueCount = 0;
             IsLeaf = true;
-
         }
         
         #endregion
@@ -72,14 +73,23 @@ namespace SpatialPartitioning
                 {
                     IsLeaf = false;
                     
+                    //copy linked-list into array
+                    //this is because now the connections are implicit and can be traversed while manipulating the connections of the linked list
                     OctValue currentValue = FirstValue;
-                    //FirstValue = null;
-                    //todo so you cant redistrubute linked list, potentially breaking it up... like should u create temporary copies of the refs
-                    
+                    _temporaryCache.Clear();
                     while (currentValue != null)
                     {
-                        InsertValueInChildren(currentValue);
-                        currentValue = currentValue.NextValue;
+                        _temporaryCache.Add(currentValue);
+                        //make current value next null, but then not before assign current value to it
+                        var nextValue = currentValue.NextValue;
+                        currentValue.NextValue = null;
+                        currentValue = nextValue;
+                    }
+                    
+                    //redistribute values to children from array
+                    for (int i = 0; i < _temporaryCache.Count; i++)
+                    {
+                        InsertValueInChildren(_temporaryCache[i]);
                     }
 
                     FirstValue = null;
