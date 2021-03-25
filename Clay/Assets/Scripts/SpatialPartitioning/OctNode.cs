@@ -125,7 +125,7 @@ namespace SpatialPartitioning
             return previousValue;
         }
 
-        public void ForEach(Action<OctValue> action)
+        public void ForEachValue(Action<OctValue> action)
         {
             OctValue currentValue = FirstValue;
             while (currentValue != null)
@@ -133,6 +133,18 @@ namespace SpatialPartitioning
                 action.Invoke(currentValue);
                 currentValue = currentValue.NextValue;
             }
+        }
+        
+        public void ForEachChild(Action<OctNode> action)
+        {
+            if (Child___ != null) action.Invoke(Child___);
+            if (ChildX__ != null) action.Invoke(ChildX__);
+            if (Child_Y_ != null) action.Invoke(Child_Y_);
+            if (Child__Z != null) action.Invoke(Child__Z);
+            if (ChildXY_ != null) action.Invoke(ChildXY_);
+            if (ChildX_Z != null) action.Invoke(ChildX_Z);
+            if (Child_YZ != null) action.Invoke(Child_YZ);
+            if (ChildXYZ != null) action.Invoke(ChildXYZ);
         }
 
         //todo make getOctantS from AABB.
@@ -236,6 +248,7 @@ namespace SpatialPartitioning
         //
         //     return x | y | z;
         // }
+        
         
         /// <summary>
         /// 

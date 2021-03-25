@@ -34,23 +34,23 @@ namespace SpatialPartitioning
             Nodes[0].InsertValueInSelfOrChildren(octValue);
         }
 
-        public bool GetNeighors(Vector3 point, List<Vector3> results)
-        {
-            OctNode currentQuad = Nodes[0];
-            while (!currentQuad.IsLeaf)
-            {
-                currentQuad = currentQuad.GetChildFromPoint(point);
-            }
-            
-            currentQuad.ForEach(value =>
-            {
-                results.Add(value.Position);
-            });
-            
-            //todo get radius
-
-            return results.Count > 0;
-        }
+        // public bool GetNeighors(Vector3 point, List<Vector3> results)
+        // {
+        //     OctNode currentQuad = Nodes[0];
+        //     while (!currentQuad.IsLeaf)
+        //     {
+        //         currentQuad = currentQuad.GetChildFromPoint(point);
+        //     }
+        //     
+        //     currentQuad.ForEach(value =>
+        //     {
+        //         results.Add(value.Position);
+        //     });
+        //     
+        //     //todo get radius
+        //
+        //     return results.Count > 0;
+        // }
         
     }
 }
