@@ -155,7 +155,7 @@ namespace ClaySimulation
                 for (int i = 0; i < _particles.Count; i++)
                 {
                     var particle = _particles[i];
-                    var color = Common.RandomColor(ran);
+                    var color = Common.RandomColor(ref ran);
                     Gizmos.color = color;
 
                     Gizmos.DrawWireSphere(particle.RigidBody.position, _minRadius);
@@ -166,27 +166,38 @@ namespace ClaySimulation
 
             if (Octree != null)
             {
-                Random ran = Random.CreateFromIndex(200);
+                Random ran = Random.CreateFromIndex(3759);
                 for (int i = 0; i < Octree.Nodes.Count; i++)
                 {
                     var nodes = Octree.Nodes;
                     var width = nodes[i].HalfWidth * 2;
                     
-                    var color = Common.RandomColor(ran);
+                    var color = Common.RandomColor(ref ran);
                     Gizmos.color = color;
+                    
                     Gizmos.DrawWireCube(nodes[i].Center, new Vector3(width, width, width));
-                }
-                
-                
-                ran = Random.CreateFromIndex(1234);
-                for (int i = 0; i < Octree.Values.Count; i++)
-                {
-                    var values = Octree.Values;
+                    float offset = 0.995f;
+                    Gizmos.DrawWireCube(nodes[i].Center, new Vector3(width, width, width) * offset);
 
-                    var color = Common.RandomColor(ran, 0.5f);
-                    Gizmos.color = color;
-                    Gizmos.DrawSphere(values[i].Position, .1f);
+                    OctValue currentVal = nodes[i].FirstValue;
+                    while (currentVal != null)
+                    {
+                        Gizmos.DrawSphere(currentVal.Position, 0.05f);
+                        currentVal = currentVal.NextValue;
+                    }
+                
                 }
+                
+                
+                // ran = Random.CreateFromIndex(1234);
+                // for (int i = 0; i < Octree.Values.Count; i++)
+                // {
+                //     var values = Octree.Values;
+                //
+                //     var color = Common.RandomColor(ran, 0.5f);
+                //     Gizmos.color = color;
+                //     Gizmos.DrawSphere(values[i].Position, .1f);
+                // }
             }
         }
     }

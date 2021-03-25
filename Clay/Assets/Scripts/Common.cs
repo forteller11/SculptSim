@@ -6,7 +6,7 @@ namespace DefaultNamespace
 {
     public static class Common
     {
-        public static Color RandomColor(Random random, float alpha = 1)
+        public static Color RandomColor(ref Random random, float alpha = 1)
         {
             return new Color(random.NextFloat(), random.NextFloat(), random.NextFloat(), alpha);
         }

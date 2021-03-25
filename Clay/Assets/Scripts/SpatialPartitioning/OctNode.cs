@@ -181,21 +181,11 @@ namespace SpatialPartitioning
             int z = (octant & 0b_001) >> 0;
 
             var vec = (new Vector3Int(x, y, z));
-            var scaledBetweenOneAndMinusOne = (vec * 2) - new Vector3Int(-1, -1, -1);
+            var scaledBetweenOneAndMinusOne = (vec * 2) - new Vector3Int(1, 1, 1);
             //todo debug
             return scaledBetweenOneAndMinusOne;
         }
-        
-        
-        
-        //
-        // public int GetChildNodeIndexContainingPoint(Vector3 point)
-        // {
-        //     int octant = OctantFromAABBPoint(point);
-        //     int child = ChildNodeIndexFromOctant(octant);
-        //     return child;
-        // }
-        
+
         /// <returns> returns number between 0-7 which represents what octant
         /// the largest bit represents x, middle represents y, smallest bit z</returns>
         public int OctantFromAABBPoint(Vector3 point)
