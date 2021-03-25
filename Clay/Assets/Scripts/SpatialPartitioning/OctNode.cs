@@ -1,10 +1,31 @@
 ﻿using System;
 using System.Collections.Generic;
+using SpatialPartitioning;
+using Unity.Collections;
 using UnityEngine;
 
 
 namespace SpatialPartitioning
 {
+
+    /* -------------
+        where XYZ == plus in those axis, and _ means minus in those axis
+          > so XYZ is right, upper, forward AABB
+          > while ___ is left, down, backwards AABB
+          >  X__ is right, dowm, backwards AAB
+        --------------------------- */
+    [Flags]
+    public enum Octant
+    {
+        ___ = 0b_000,
+        X__ = 0b_100,
+        _Y_ = 0b_010,
+        __Z = 0b_001,
+        XY_ = X__ | _Y_,
+        X_Z = X__ | __Z,
+        _YZ = _Y_ | __Z,
+        XYZ = X__ | _Y_ | __Z,
+    };
     /* ---------------------
      * parent nodes will never contain elements,
      * leaf nodes will always contain elements
@@ -25,13 +46,6 @@ namespace SpatialPartitioning
         public bool IsLeaf;
         public int Depth;
         
-
-        /* -------------
-        where XYZ == plus in those axis, and _ means minus in those axis
-          > so XYZ is right, upper, forward AABB
-          > while ___ is left, down, backwards AABB
-          >  X__ is right, dowm, backwards AAB
-        --------------------------- */
         public OctNode ChildXYZ;
         public OctNode Child_YZ;
         public OctNode ChildX_Z;
@@ -85,8 +99,6 @@ namespace SpatialPartitioning
                         
                         currentValue = nextValue;
                     }
-                    
-                
 
                     FirstValue = null;
                 }
@@ -113,6 +125,24 @@ namespace SpatialPartitioning
             return previousValue;
         }
 
+        public void ForEach(Action<OctValue> action)
+        {
+            OctValue currentValue = FirstValue;
+            while (currentValue != null)
+            {
+                action.Invoke(currentValue);
+                currentValue = currentValue.NextValue;
+            }
+        }
+
+        //todo make getOctantS from AABB.
+        //todo get children from octant
+        public OctNode GetChildFromPoint(Vector3 point)
+        {
+            var octant = OctantAtPosition(point);
+            var child = GetChildNodeFromOctant(octant);
+            return child;
+        }
         
         void InsertValueInSelf(OctValue value)
         {
@@ -134,11 +164,8 @@ namespace SpatialPartitioning
         /// <remarks> creates new children as necessary</remarks>
         void InsertValueInChildren(OctValue value)
         {
-            var values = Tree.Values;
-            var nodes = Tree.Nodes;
-            
             var point = value.Position;
-            int octant = OctantFromAABBPoint(point);
+            var octant = OctantAtPosition(point);
             var child = GetChildNodeFromOctant(octant);
             
             //if it doesn't exist, create new child and set to appropriate octNode child member
@@ -155,7 +182,7 @@ namespace SpatialPartitioning
         /// </summary>
         /// <param name="octant"></param>
         /// <returns>index of child in octnode array</returns>
-        OctNode CreateChildNodeAtOctant(int octant)
+        OctNode CreateChildNodeAtOctant(Octant octant)
         {
             var tree = Tree;
             var nodes = Tree.Nodes;
@@ -174,11 +201,11 @@ namespace SpatialPartitioning
         }
 
         ///<returns>returns values between [-1,-1,-1] and [1,1,1]</returns>
-        Vector3Int OctantToVector3Int(int octant)
+        Vector3Int OctantToVector3Int(Octant octant)
         {
-            int x = (octant & 0b_100) >> 2;
-            int y = (octant & 0b_010) >> 1;
-            int z = (octant & 0b_001) >> 0;
+            int x = (int) (octant & Octant.X__) >> 2;
+            int y = (int) (octant & Octant._Y_) >> 1;
+            int z = (int) (octant & Octant.__Z) >> 0;
 
             var vec = (new Vector3Int(x, y, z));
             var scaledBetweenOneAndMinusOne = (vec * 2) - new Vector3Int(1, 1, 1);
@@ -188,50 +215,61 @@ namespace SpatialPartitioning
 
         /// <returns> returns number between 0-7 which represents what octant
         /// the largest bit represents x, middle represents y, smallest bit z</returns>
-        public int OctantFromAABBPoint(Vector3 point)
+        public Octant OctantAtPosition(Vector3 point)
         {
             var boxCenter = Center;
             
-            int x = point.x > boxCenter.x ? 0b_100 : 0;
-            int y = point.y > boxCenter.y ? 0b_010 : 0;
-            int z = point.z > boxCenter.z ? 0b_001 : 0;
+            Octant x = point.x > boxCenter.x ? Octant.X__ : 0;
+            Octant y = point.y > boxCenter.y ? Octant._Y_ : 0;
+            Octant z = point.z > boxCenter.z ? Octant.__Z : 0;
 
             return x | y | z;
         }
+        
+        // public NativeArray<int> OctantsAtPosition(Vector3 point)
+        // {
+        //     var boxCenter = Center;
+        //     
+        //     int x = point.x > boxCenter.x ? 0b_100 : 0;
+        //     int y = point.y > boxCenter.y ? 0b_010 : 0;
+        //     int z = point.z > boxCenter.z ? 0b_001 : 0;
+        //
+        //     return x | y | z;
+        // }
         
         /// <summary>
         /// 
         /// </summary>
         /// <param name="octant"></param>
         /// <returns> returns -1 if no child exists, otherwise the index into the nodes element</returns>
-        OctNode GetChildNodeFromOctant(int octant)
+        OctNode GetChildNodeFromOctant(Octant octant)
         {
             switch (octant)
             {
-                case 0b_111: return ChildXYZ;
-                case 0b_011: return Child_YZ;
-                case 0b_101: return ChildX_Z;
-                case 0b_110: return ChildXY_;
-                case 0b_001: return Child__Z;
-                case 0b_100: return ChildX__;
-                case 0b_010: return Child_Y_;
-                case 0b_000: return Child___;
+                case Octant.XYZ: return ChildXYZ;
+                case Octant._YZ: return Child_YZ;
+                case Octant.X_Z: return ChildX_Z;
+                case Octant.XY_: return ChildXY_;
+                case Octant.__Z: return Child__Z;
+                case Octant.X__: return ChildX__;
+                case Octant._Y_: return Child_Y_;
+                case Octant.___: return Child___;
                 default: throw new ArgumentException("octant must be between values 0 to 7!");
             }
         }
         
-        void SetChildNodeFromOctant(int octant, OctNode value)
+        void SetChildNodeFromOctant(Octant octant, OctNode value)
         {
             switch (octant)
             {
-                case 0b_111: ChildXYZ = value; return;
-                case 0b_011: Child_YZ = value; return;
-                case 0b_101: ChildX_Z = value; return;
-                case 0b_110: ChildXY_ = value; return;
-                case 0b_001: Child__Z = value; return;
-                case 0b_100: ChildX__ = value; return;
-                case 0b_010: Child_Y_ = value; return;
-                case 0b_000: Child___ = value; return;
+                case Octant.XYZ: ChildXYZ = value; return;
+                case Octant._YZ: Child_YZ = value; return;
+                case Octant.X_Z: ChildX_Z = value; return;
+                case Octant.XY_: ChildXY_ = value; return;
+                case Octant.__Z: Child__Z = value; return;
+                case Octant.X__: ChildX__ = value; return;
+                case Octant._Y_: Child_Y_ = value; return;
+                case Octant.___: Child___ = value; return;
                 default: throw new ArgumentException("octant must be between values 0 to 7!");
             }
         }
