@@ -15,6 +15,8 @@ namespace ClaySimulation
         [FoldoutGroup("Spawn")] [SerializeField] [AssetsOnly] private Clay _particlePrefab;
         [FoldoutGroup("Spawn")] [SerializeField] private int _spawnOnStart = 10;
         [FoldoutGroup("Spawn")] [SerializeField] private float _radiusToSpawnIn = 5;
+        [FoldoutGroup("Spawn")] [SerializeField] private float _octreeRadiusMultiplier = 1.5f;
+        
         
         [FoldoutGroup("Sim Settings")] [SerializeField] float _minRadius = 0;
         [FoldoutGroup("Sim Settings")] [SerializeField] float _maxRadius = 2;
@@ -63,48 +65,55 @@ namespace ClaySimulation
             
             #region octree
             Octree = new Octree();
-            Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn*2));
-            for (int i = 0; i < _particles.Count; i++)
-            {
-                var p = _particles[i].RigidBody.position;
-                Octree.Insert(new Vector3(p.x, p.y, p.z));
-            }
-
-            _queryResults = new List<Vector3>();
+            _queryResults = new List<Vector3>(64);
             #endregion
         }
 
         private void FixedUpdate()
         {
+            #region octree
+            Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn*_octreeRadiusMultiplier));
+            
+            for (int i = 0; i < _particles.Count; i++)
+            {
+                var p3 =  _particles[i].RigidBody.position;
+                Octree.Insert(p3);
+            }
+            
+            #endregion
+            
             #region collision and force calc
             for (int i = 0; i < _particles.Count; i++)
             {
                 var p1Pos = _particles[i].transform.position;
-                
-                for (int j = 0; j < _particles.Count; j++)
-                {
-                    if (i == j) continue;
-                    var p2Pos = _particles[j].transform.position;
 
+                var querySphere = new Sphere(p1Pos, _maxRadius);
+                _queryResults.Clear();
+                Octree.QueryNonAlloc(querySphere, _queryResults);
+                    
+                for (int j = 0; j < _queryResults.Count; j++)
+                {
+                    var p2Pos = _queryResults[j];
+
+                    if (p2Pos == p1Pos) continue; //if the same particle
+                    
                     Vector3 p1ToP2 = p2Pos - p1Pos;
-                    float p1p2Dist = p1ToP2.magnitude;
-                    Vector3 p1ToP2Dir = p1ToP2 / p1p2Dist;
+                    float p1P2Dist = p1ToP2.magnitude;
+                    Vector3 p1ToP2Dir = p1ToP2 / p1P2Dist;
                     
 
-                    if (p1p2Dist < _maxRadius)
+                    if (p1P2Dist < _maxRadius)
                     {
-                        //todo is colliding?
-
-                        float percentageBetweenMinMax = Mathf.InverseLerp(_minRadius, _maxRadius, p1p2Dist);
+                        float percentageBetweenMinMax = Mathf.InverseLerp(_minRadius, _maxRadius, p1P2Dist);
                         float desiredPercentageBetweenMinMax = _desiredPercentBetweenMinMax;
                         float currentToDesiredPercentage = percentageBetweenMinMax - desiredPercentageBetweenMinMax;
                         float desiredDist = Mathf.Lerp(_minRadius, _maxRadius, _desiredPercentBetweenMinMax);
                         
                         float indexInCurve;
-                        if (p1p2Dist < desiredDist)
-                            indexInCurve = -Mathf.InverseLerp(desiredDist, _minRadius, p1p2Dist); //0, -1
+                        if (p1P2Dist < desiredDist)
+                            indexInCurve = -Mathf.InverseLerp(desiredDist, _minRadius, p1P2Dist); //0, -1
                         else 
-                            indexInCurve = Mathf.InverseLerp(desiredDist, _maxRadius, p1p2Dist); //0, 1
+                            indexInCurve = Mathf.InverseLerp(desiredDist, _maxRadius, p1P2Dist); //0, 1
                         
                         float scale = currentToDesiredPercentage * _constantMultiplier * _forceMultiplierCurve.Evaluate(indexInCurve);
                         Vector3 posToAddScaled = p1ToP2Dir * scale;
@@ -180,7 +189,7 @@ namespace ClaySimulation
                 for (int i = 0; i < Octree.Nodes.Count; i++)
                 {
                     var nodes = Octree.Nodes;
-                    var width = nodes[i].AABB.HalfWidth * 2;
+                    var width = nodes[i].AABB.HalfWidth * 1.3f;
                     
                     var color = Common.RandomColor(ref ran);
                     Gizmos.color = color;

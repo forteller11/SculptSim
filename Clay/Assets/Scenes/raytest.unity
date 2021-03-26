@@ -471,11 +471,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _particlePrefab: {fileID: 1533876711183798372, guid: abfd8889d7f4f914e9c47fac2b7d94c2, type: 3}
-  _spawnOnStart: 0
+  _spawnOnStart: 300
   _radiusToSpawnIn: 1
-  _minRadius: 0.0625
+  _octreeRadiusMultiplier: 2.5
+  _minRadius: 0.255
   _maxRadius: 0.5
-  _desiredPercentBetweenMinMax: 0.6
+  _desiredPercentBetweenMinMax: 0.55
   _constantMultiplier: 0.05
   _forceMultiplierCurve:
     serializedVersion: 2
@@ -591,7 +592,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!64 &1437869828
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -663,7 +664,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1437869827}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.658, z: 0}
+  m_LocalPosition: {x: 0, y: -3.26, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
