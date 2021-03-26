@@ -168,7 +168,7 @@ namespace ClaySimulation
                     var color = Common.RandomColor(ref ran);
                     Gizmos.color = color;
 
-                    Gizmos.DrawWireSphere(particle.RigidBody.position, _minRadius);
+                    Gizmos.DrawSphere(particle.RigidBody.position, _minRadius);
                     Gizmos.DrawWireSphere(particle.RigidBody.position, _maxRadius);
                     Gizmos.DrawWireSphere(particle.RigidBody.position, Mathf.Lerp(_minRadius, _maxRadius, _desiredPercentBetweenMinMax));
                 }
@@ -195,8 +195,6 @@ namespace ClaySimulation
                         Gizmos.DrawSphere(currentVal.Position, 0.05f);
                         currentVal = currentVal.NextValue;
                     }
-
-                    
                 }
                 
                 Gizmos.color = Color.green;

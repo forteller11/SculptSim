@@ -31,15 +31,24 @@ namespace SpatialPartitioning
 
         public void Insert(Vector3 point)
         {
-            var octValue = OctValue.CreateTail(Values.Count.ToString(), point);
-            Values.Add(octValue);
-            Nodes[0].InsertValueInSelfOrChildren(octValue);
+            var root = Nodes[0];
+            if (root.PointOverlaps(point))
+            {
+                var octValue = OctValue.CreateTail(point);
+                Values.Add(octValue);
+                root.InsertValueInSelfOrChildren(octValue);
+            }
+            else
+            {
+                throw new ArgumentException("Cannot insert point outside of octree!");
+            }
+            
         }
 
         public bool QueryNonAlloc(Sphere sphere, List<Vector3> results)
         {
             var root = Nodes[0];
-            if (root.OverlapsSphere(sphere))
+            if (root.SphereOverlaps(sphere))
                 GetOverlappingChildrenOrAddToResultsDepthFirst(sphere, root, results);
         
             return results.Count > 0;
@@ -52,7 +61,7 @@ namespace SpatialPartitioning
                 //todo remove closure allocation...
                 node.ForEachChild((child) =>
                 {
-                    if (child.OverlapsSphere(sphere))
+                    if (child.SphereOverlaps(sphere))
                         GetOverlappingChildrenOrAddToResultsDepthFirst(sphere, child, results);
                 });
             }

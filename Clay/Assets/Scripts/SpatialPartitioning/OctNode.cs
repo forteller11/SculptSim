@@ -250,10 +250,8 @@ namespace SpatialPartitioning
         //     return results;
         // }
 
-        public bool OverlapsSphere(Sphere sphere)
-        {
-            return Common.SphereAABBOverlap(sphere, AABB);
-        }
+        public bool SphereOverlaps(Sphere sphere) => Intersection.SphereAABBOverlap(sphere, AABB);
+        public bool PointOverlaps(Vector3 position) => Intersection.PointAABBOverlap(position, AABB);
         
         
         // public NativeArray<int> OctantsAtPosition(Vector3 point)

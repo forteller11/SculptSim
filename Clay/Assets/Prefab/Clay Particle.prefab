@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 3957483654136852197}
   - component: {fileID: 1533876711183798372}
   - component: {fileID: 7098548470907503630}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Clay Particle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
