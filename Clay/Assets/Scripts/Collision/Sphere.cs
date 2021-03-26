@@ -1,7 +1,9 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Collision
 {
+    [Serializable]
     public struct Sphere
     {
         public Vector3 Position;

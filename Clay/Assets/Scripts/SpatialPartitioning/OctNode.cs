@@ -236,20 +236,23 @@ namespace SpatialPartitioning
             return x | y | z;
         }
         
-        /// <returns> returns number between 0-7 which represents what octant
-        /// the largest bit represents x, middle represents y, smallest bit z</returns>
-        public List<OctNode> ChildrenInsideSphere(Sphere sphere)
+        // public List<OctNode> ChildrenInsideSphere(Sphere sphere)
+        // {
+        //     //todo convert to struct then native list NativeList<OctNode>(Allocator.Temp);
+        //     List<OctNode> results = new List<OctNode>();
+        //     ForEachChild((child) =>
+        //     {
+        //         if (Common.SphereAABBOverlap(sphere, AABB))
+        //         {
+        //             results.Add(child);
+        //         }
+        //     });
+        //     return results;
+        // }
+
+        public bool OverlapsSphere(Sphere sphere)
         {
-            //todo convert to struct then native list NativeList<OctNode>(Allocator.Temp);
-            List<OctNode> results = new List<OctNode>();
-            ForEachChild((child) =>
-            {
-                if (Common.SphereAABBOverlap(sphere, AABB))
-                {
-                    results.Add(child);
-                }
-            });
-            return results;
+            return Common.SphereAABBOverlap(sphere, AABB);
         }
         
         

@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using ClaySimulation;
 using Collision;
 using SpatialPartitioning;
 using UnityEngine;
@@ -35,30 +36,33 @@ namespace SpatialPartitioning
             Nodes[0].InsertValueInSelfOrChildren(octValue);
         }
 
-        public bool GetNeighors(Sphere sphere, List<Vector3> results)
+        public bool QueryNonAlloc(Sphere sphere, List<Vector3> results)
         {
-            OctNode currentQuad = Nodes[0];
-            while (!currentQuad.IsLeaf)
-            {
-                var children = currentQuad.ChildrenInsideSphere(sphere);
-
-                for (int i = 0; i < children; i++)
-                {
-                    //if leaf... add to results, otherwise, recursively go init...
-                    children.ChildrenInsideSphere();
-                    
-                    //todo make this part recursive
-                }
-            }
-            
-            currentQuad.ForEachValue(value =>
-            {
-                results.Add(value.Position);
-            });
-            
-            //todo get radius
+            var root = Nodes[0];
+            if (root.OverlapsSphere(sphere))
+                GetOverlappingChildrenOrAddToResultsDepthFirst(sphere, root, results);
         
             return results.Count > 0;
+        }
+
+        void GetOverlappingChildrenOrAddToResultsDepthFirst(Sphere sphere, OctNode node, List<Vector3> results)
+        {
+            if (!node.IsLeaf)
+            {
+                //todo remove closure allocation...
+                node.ForEachChild((child) =>
+                {
+                    if (child.OverlapsSphere(sphere))
+                        GetOverlappingChildrenOrAddToResultsDepthFirst(sphere, child, results);
+                });
+            }
+            else
+            {
+                node.ForEachValue((value) =>
+                {
+                    results.Add(value.Position);
+                });
+            }
         }
         
     }

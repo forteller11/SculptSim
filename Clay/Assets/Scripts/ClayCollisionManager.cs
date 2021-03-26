@@ -26,6 +26,7 @@ namespace ClaySimulation
         [ShowInInspector] private List<Clay> _particles;
         [ShowInInspector] private List<Vector3> _particlesToMove;
         [ShowInInspector] private List<Vector4> _particlePositions;
+        [ShowInInspector] private List<Vector3> _queryResults;
         [ShowInInspector] private Material _material;
         
         private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
@@ -51,7 +52,6 @@ namespace ClaySimulation
                 _particles.Add(newParticle);
             }
             
-            
             _particlesToMove = new List<Vector3>(_particles.Count);
             for (int i = 0; i < _particles.Count; i++)
                 _particlesToMove.Add(Vector3.zero);
@@ -61,6 +61,7 @@ namespace ClaySimulation
                 _particlePositions.Add(new Vector4(0,0,0, 0));
             #endregion
             
+            #region octree
             Octree = new Octree();
             Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn*2));
             for (int i = 0; i < _particles.Count; i++)
@@ -68,6 +69,9 @@ namespace ClaySimulation
                 var p = _particles[i].RigidBody.position;
                 Octree.Insert(new Vector3(p.x, p.y, p.z));
             }
+
+            _queryResults = new List<Vector3>();
+            #endregion
         }
 
         private void FixedUpdate()
@@ -146,9 +150,15 @@ namespace ClaySimulation
         {
             Octree.Insert(point);
         }
+
+        [Button]
+        void QueryTree(Sphere sphere)
+        {
+            _queryResults.Clear();
+            Octree.QueryNonAlloc(sphere, _queryResults);
+        }
         private void OnDrawGizmosSelected()
         {
-
             if (_particles != null)
             {
                 Random ran = Random.CreateFromIndex(0);
@@ -185,19 +195,16 @@ namespace ClaySimulation
                         Gizmos.DrawSphere(currentVal.Position, 0.05f);
                         currentVal = currentVal.NextValue;
                     }
-                
+
+                    
                 }
                 
+                Gizmos.color = Color.green;
+                for (int i = 0; i < _queryResults.Count; i++)
+                {
+                    Gizmos.DrawSphere(_queryResults[i], 0.1f);
+                }
                 
-                // ran = Random.CreateFromIndex(1234);
-                // for (int i = 0; i < Octree.Values.Count; i++)
-                // {
-                //     var values = Octree.Values;
-                //
-                //     var color = Common.RandomColor(ran, 0.5f);
-                //     Gizmos.color = color;
-                //     Gizmos.DrawSphere(values[i].Position, .1f);
-                // }
             }
         }
     }
