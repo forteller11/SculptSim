@@ -15,15 +15,20 @@ namespace ClaySimulation
         [FoldoutGroup("Spawn")] [SerializeField] [AssetsOnly] private Clay _particlePrefab;
         [FoldoutGroup("Spawn")] [SerializeField] private int _spawnOnStart = 10;
         [FoldoutGroup("Spawn")] [SerializeField] private float _radiusToSpawnIn = 5;
-        [FoldoutGroup("Spawn")] [SerializeField] private float _octreeRadiusMultiplier = 1.5f;
         
-        
+        [FoldoutGroup("Octree")] [SerializeField] private float _octreeRadiusMultiplier = 1.5f;
+        [FoldoutGroup("Octree")] [SerializeField] private int _maxValuesPerNode = 16;
+
+
         [FoldoutGroup("Sim Settings")] [SerializeField] float _minRadius = 0;
         [FoldoutGroup("Sim Settings")] [SerializeField] float _maxRadius = 2;
         [FoldoutGroup("Sim Settings")] [SerializeField] float _desiredPercentBetweenMinMax = .5f;
         [FoldoutGroup("Sim Settings")] [SerializeField] [Range(0,1)] private float  _constantMultiplier = .05f;
         [Tooltip("x== 0 means at desired percent, -1 == at min, 1 == at max")] 
         [FoldoutGroup("Sim Settings")] [SerializeField] AnimationCurve _forceMultiplierCurve = new AnimationCurve(new Keyframe(-1, 1), new Keyframe(0, 0), new Keyframe(1, 1));
+
+        [FoldoutGroup("Debug")] public bool DrawParticles;
+        [FoldoutGroup("Debug")] public bool DrawOctree;
         
         [ShowInInspector] private List<Clay> _particles;
         [ShowInInspector] private List<Vector3> _particlesToMove;
@@ -72,7 +77,7 @@ namespace ClaySimulation
         private void FixedUpdate()
         {
             #region octree
-            Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn*_octreeRadiusMultiplier));
+            Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier), _maxRadius/2, _maxValuesPerNode);
             
             for (int i = 0; i < _particles.Count; i++)
             {
@@ -168,7 +173,7 @@ namespace ClaySimulation
         }
         private void OnDrawGizmosSelected()
         {
-            if (_particles != null)
+            if (_particles != null && DrawParticles)
             {
                 Random ran = Random.CreateFromIndex(0);
                 for (int i = 0; i < _particles.Count; i++)
@@ -183,13 +188,13 @@ namespace ClaySimulation
                 }
             }
 
-            if (Octree != null)
+            if (Octree != null && DrawOctree)
             {
                 Random ran = Random.CreateFromIndex(3759);
                 for (int i = 0; i < Octree.Nodes.Count; i++)
                 {
                     var nodes = Octree.Nodes;
-                    var width = nodes[i].AABB.HalfWidth * 1.3f;
+                    var width = nodes[i].AABB.HalfWidth * 2;
                     
                     var color = Common.RandomColor(ref ran);
                     Gizmos.color = color;
@@ -206,11 +211,11 @@ namespace ClaySimulation
                     }
                 }
                 
-                Gizmos.color = Color.green;
-                for (int i = 0; i < _queryResults.Count; i++)
-                {
-                    Gizmos.DrawSphere(_queryResults[i], 0.1f);
-                }
+                // Gizmos.color = Color.green;
+                // for (int i = 0; i < _queryResults.Count; i++)
+                // {
+                //     Gizmos.DrawSphere(_queryResults[i], 0.1f);
+                // }
                 
             }
         }

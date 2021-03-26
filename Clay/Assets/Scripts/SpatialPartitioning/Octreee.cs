@@ -13,8 +13,8 @@ namespace SpatialPartitioning
         public List<OctNode> Nodes;
         public List<OctValue> Values;
 
-        public int MaxDepth = 2;
-        public int MaxValuesPerNode = 3; 
+        public float MinHalfSize;
+        public int MaxValuesPerNode = 16; 
 
         public Octree()
         {
@@ -22,11 +22,13 @@ namespace SpatialPartitioning
             Values = new List<OctValue>(1024);
         }
 
-        public void CleanAndPrepareForInsertion(AABB aabb)
+        public void CleanAndPrepareForInsertion(AABB aabb, float maxHalfSize, int maxValuesPerNode)
         {
+            MaxValuesPerNode = maxValuesPerNode;
+            MinHalfSize = maxHalfSize;
             Nodes.Clear();
             Values.Clear();
-            Nodes.Add(new OctNode(this, 0, aabb));
+            Nodes.Add(new OctNode(this, aabb));
         }
 
         public void Insert(Vector3 point)

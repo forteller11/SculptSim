@@ -45,8 +45,7 @@ namespace SpatialPartitioning
         public OctValue FirstValue;
         public int ValueCount;
         public bool IsLeaf;
-        public int Depth;
-        
+
         public OctNode ChildXYZ;
         public OctNode Child_YZ;
         public OctNode ChildX_Z;
@@ -58,12 +57,11 @@ namespace SpatialPartitioning
         #endregion
 
         #region constructors
-        public OctNode(Octree tree, int depth, AABB aabb)
+        public OctNode(Octree tree, AABB aabb)
         {
             Tree = tree;
             AABB = aabb;
-            Depth = depth;
-            
+
             ValueCount = 0;
             IsLeaf = true;
         }
@@ -73,24 +71,20 @@ namespace SpatialPartitioning
         public void InsertValueInSelfOrChildren(OctValue value)
         {
             
-            if (IsLeaf ||
-                Depth > Tree.MaxDepth)
+            if (IsLeaf)
             {
                 InsertValueInSelf(value);
-                
-                //if exceeded maxium allowed values, redistribute values into children
-                //this node is no longer a leaf
+
+                float theoreticalChildHalfWidths = AABB.HalfWidth / 2f;
+                //if exceeded maxium allowed values,
+                //and child would not be less than min half width
                 if (ValueCount > Tree.MaxValuesPerNode && 
-                    Depth <= Tree.MaxDepth)
+                    theoreticalChildHalfWidths > Tree.MinHalfSize)
                 {
-                    IsLeaf = false;
-                    
-                    //copy linked-list into array
-                    //this is because now the connections are implicit and can be traversed while manipulating the connections of the linked list
+                    //redistribute values into children
                     OctValue currentValue = FirstValue;
                     while (currentValue != null)
                     {
-                        
                         var nextValue = currentValue.NextValue;
                         currentValue.NextValue = null;
                         
@@ -99,6 +93,8 @@ namespace SpatialPartitioning
                         currentValue = nextValue;
                     }
 
+                    //this node is no longer a leaf, revoke ownership of values
+                    IsLeaf = false;
                     FirstValue = null;
                 }
 
@@ -203,7 +199,7 @@ namespace SpatialPartitioning
             var childOffset = (Vector3) octantPosition * quarterWidth;
             var childPos = AABB.Center + childOffset;
 
-            var newOctNode = new OctNode(tree, Depth + 1, new AABB(childPos, quarterWidth));
+            var newOctNode = new OctNode(tree, new AABB(childPos, quarterWidth));
             
             nodes.Add(newOctNode);
             SetChildNodeFromOctant(octant, newOctNode);
