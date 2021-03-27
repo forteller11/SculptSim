@@ -40,10 +40,8 @@ namespace ClaySimulation
         private static readonly int PARTICLES_UNIFORM = Shader.PropertyToID("_Particles");
         [SerializeField] private Octree Octree;
 
-        private void Start()
+        private void Awake()
         {
-            
-            
             _material = GetComponent<MeshRenderer>().material;
             
             #region particles
@@ -81,6 +79,17 @@ namespace ClaySimulation
             ApplyParticleForces();
         }
 
+        void ConstructOctree()
+        {
+            Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier));
+            
+            for (int i = 0; i < _particles.Count; i++)
+            {
+                var p3 =  _particles[i].RigidBody.position;
+                Octree.Insert(p3);
+            }
+        }
+        
         void CalculateParticleForces()
         {
             #region collision and force calc
@@ -141,19 +150,7 @@ namespace ClaySimulation
             #endregion
         }
         
-        void ConstructOctree()
-        {
-            #region octree
-            Octree.CleanAndPrepareForInsertion(new AABB(transform.position, Octree.Settings.MaxValuesPerNode));
-            
-            for (int i = 0; i < _particles.Count; i++)
-            {
-                var p3 =  _particles[i].RigidBody.position;
-                Octree.Insert(p3);
-            }
-            
-            #endregion
-        }
+        
 
         private void Update()
         {
@@ -208,10 +205,9 @@ namespace ClaySimulation
 
                     nodes[i].GetValues(out var nodeValues);
                     for (int j = 0; j < nodeValues.Length; j++)
-                    {
                         Gizmos.DrawSphere(nodeValues[j].Position, 0.05f);
-                    }
-               
+                    nodeValues.Dispose();
+
                 }
                 
             }

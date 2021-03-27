@@ -24,7 +24,7 @@ namespace SpatialPartitioning
         
         public IndexToValue<OctValue> FirstValue;
         public int ValueCount;
-        public bool IsLeaf;
+        public int IsLeaf; //used as a bool, but is an int so it is blittable and can be stored in a nativeList<T
 
         public IndexToValue<OctNode> ChildXYZ;
         public IndexToValue<OctNode> Child_YZ;
@@ -45,7 +45,7 @@ namespace SpatialPartitioning
 
             FirstValue = IndexToValue<OctValue>.Empty();
             ValueCount = 0;
-            IsLeaf = true;
+            IsLeaf = 1;
             
             ChildXYZ = IndexToValue<OctNode>.Empty();
             Child_YZ = IndexToValue<OctNode>.Empty();
@@ -59,7 +59,7 @@ namespace SpatialPartitioning
 
         public void InsertValueInSelfOrChildren(OctValue value)
         {
-            if (IsLeaf)
+            if (IsLeaf != 0)
             {
                 InsertValueInSelf(value);
 
@@ -87,7 +87,7 @@ namespace SpatialPartitioning
 
                     //this node is no longer a leaf, revoke ownership of values
                     FirstValue = IndexToValue<OctValue>.Empty();
-                    IsLeaf = false; //todo: remove use of IsLeaf by just using if (valueCount > SpecialReallyBigNumber)
+                    IsLeaf = 0; //todo: remove use of IsLeaf by just using if (valueCount > SpecialReallyBigNumber)
                     ValueCount = 0;
                 }
 

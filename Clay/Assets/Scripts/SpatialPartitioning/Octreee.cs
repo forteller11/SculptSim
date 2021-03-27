@@ -15,7 +15,7 @@ namespace SpatialPartitioning
 
         public Octree(OctSettings settings)
         {
-            Nodes  = new NativeList<OctNode> (128, Allocator.Persistent);
+            Nodes  = new NativeList<OctNode> (128,  Allocator.Persistent);
             Values = new NativeList<OctValue>(1024, Allocator.Persistent);
             Settings = settings;
         }
@@ -54,7 +54,7 @@ namespace SpatialPartitioning
 
         void GetOverlappingChildrenOrAddToResultsDepthFirst(Sphere sphere, OctNode node, NativeList<Vector3> results)
         {
-            if (!node.IsLeaf)
+            if (node.IsLeaf != 0)
             {
                 //todo remove closure allocation...
                 node.ForEachChild((child) =>
@@ -66,11 +66,9 @@ namespace SpatialPartitioning
             else
             {
                 node.GetValues(out var values);
-
                 for (int i = 0; i < values.Length; i++)
-                {
                     results.Add(values[i].Position);
-                }
+                values.Dispose();
             }
         }
         

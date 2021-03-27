@@ -1,10 +1,11 @@
-﻿using UnityEditor;
+﻿using System;
+using UnityEditor;
 using UnityEngine;
 
 namespace SpatialPartitioning
 {
-    [CreateAssetMenu(fileName = "Octree Settings", menuName = "Octree", order = 1)]
-    public class OctSettings : ScriptableObject
+    [Serializable]
+    public struct OctSettings
     {
         public int MaxValuesPerNode;
         public float MinHalfSize;

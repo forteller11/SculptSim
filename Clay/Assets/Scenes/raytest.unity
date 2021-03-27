@@ -473,7 +473,9 @@ MonoBehaviour:
   _particlePrefab: {fileID: 1533876711183798372, guid: abfd8889d7f4f914e9c47fac2b7d94c2, type: 3}
   _spawnOnStart: 400
   _radiusToSpawnIn: 1
-  _octSettings: {fileID: 11400000, guid: 361d1526a7befba47b7be6ff8c10699d, type: 2}
+  _octSettings:
+    MaxValuesPerNode: 16
+    MinHalfSize: 0.1
   _octreeRadiusMultiplier: 2
   _minRadius: 0.2
   _maxRadius: 0.3
