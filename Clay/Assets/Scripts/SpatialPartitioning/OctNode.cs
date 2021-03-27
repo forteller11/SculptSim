@@ -198,13 +198,14 @@ namespace SpatialPartitioning
             var childOffset = (Vector3) octantPosition * quarterWidth;
             var childPos = AABB.Center + childOffset;
 
-            var newOctNode = new OctNode(new IndexToOctNode(nodes.Length), new AABB(childPos, quarterWidth), Settings);
+            var childNode = new OctNode(new IndexToOctNode(nodes.Length), new AABB(childPos, quarterWidth), Settings);
+            var childNodeIndex = IndexToOctNode.Empty();
+            childNodeIndex.AddElement(nodes, childNode);
+            
+            SetChildNodeFromOctant(nodes, octant, childNode);
+            SelfIndex.SetElement(nodes, this);
 
-            var childIndex = IndexToOctNode.Empty();
-            childIndex.AddElement(nodes, newOctNode);
-            SetChildNodeFromOctant(nodes, octant, newOctNode);
-
-            return childIndex;
+            return childNodeIndex;
         }
 
         ///<returns>returns values between [-1,-1,-1] and [1,1,1]</returns>

@@ -14,7 +14,7 @@ namespace SpatialPartitioning
         public int Index => _index;
 
         public IndexToOctNode(int index) => _index = index;
-        
+
         public static IndexToOctNode Empty() => new IndexToOctNode(-1);
         
         
@@ -26,8 +26,8 @@ namespace SpatialPartitioning
         
         public void AddElement(NativeList<OctNode> list, OctNode value)
         {
+            _index = list.Length;
             list.Add(value);
-            _index = list.Length - 1;
         }
         
         public void SetElementOrAddIfEmpty(NativeList<OctNode> list, OctNode value)

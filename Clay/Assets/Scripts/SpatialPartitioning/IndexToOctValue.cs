@@ -26,8 +26,8 @@ namespace SpatialPartitioning
         
         public void AddElement(NativeList<OctValue> list, OctValue value)
         {
+            _index = list.Length;
             list.Add(value);
-            _index = list.Length - 1;
         }
         
         public void SetElementOrAddIfEmpty(NativeList<OctValue> list, OctValue value)
