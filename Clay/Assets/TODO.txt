@@ -1,0 +1,7 @@
+- make gc/cache friendly
+
+- only query max # of poitns at once
+
+- getting working on gpu
+
+- record recently in area particles and try to maintain relative positions... at least if not recently tocuhed by a hand? --> this will make particles maintain structure.

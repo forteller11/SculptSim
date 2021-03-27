@@ -76,17 +76,13 @@ namespace ClaySimulation
 
         private void FixedUpdate()
         {
-            #region octree
-            Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier), _maxRadius/2, _maxValuesPerNode);
-            
-            for (int i = 0; i < _particles.Count; i++)
-            {
-                var p3 =  _particles[i].RigidBody.position;
-                Octree.Insert(p3);
-            }
-            
-            #endregion
-            
+            ConstructOctree();
+            CalculateParticleForces();
+            ApplyParticleForces();
+        }
+
+        void CalculateParticleForces()
+        {
             #region collision and force calc
             for (int i = 0; i < _particles.Count; i++)
             {
@@ -129,7 +125,10 @@ namespace ClaySimulation
                 
             }
             #endregion
+        }
 
+        void ApplyParticleForces()
+        {
             #region move particles
             for (int i = 0; i < _particles.Count; i++)
             {
@@ -139,6 +138,20 @@ namespace ClaySimulation
                 _particles[i].RigidBody.MovePosition(newPos);
                 _particlesToMove[i] = Vector3.zero;
             }
+            #endregion
+        }
+        
+        void ConstructOctree()
+        {
+            #region octree
+            Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier), _maxRadius/2, _maxValuesPerNode);
+            
+            for (int i = 0; i < _particles.Count; i++)
+            {
+                var p3 =  _particles[i].RigidBody.position;
+                Octree.Insert(p3);
+            }
+            
             #endregion
         }
 
@@ -158,19 +171,9 @@ namespace ClaySimulation
             _material.SetVectorArray(PARTICLES_UNIFORM, _particlePositions);
             _material.SetInt(PARTICLES_LENGTH_UNIFORM, _particlePositions.Count);
         }
+        
 
-        [Button] 
-        void InsertPoint(Vector3 point)
-        {
-            Octree.Insert(point);
-        }
-
-        [Button]
-        void QueryTree(Sphere sphere)
-        {
-            _queryResults.Clear();
-            Octree.QueryNonAlloc(sphere, _queryResults);
-        }
+        
         private void OnDrawGizmosSelected()
         {
             if (_particles != null && DrawParticles)
