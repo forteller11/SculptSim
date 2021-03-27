@@ -24,6 +24,8 @@ namespace SpatialPartitioning
         public int ValueCount;
         public int IsLeaf; //used as a bool, but is an int so it is blittable and can be stored in a nativeList<T
 
+        public IndexToOctNode SelfIndex;
+        
         public IndexToOctNode ChildXYZ;
         public IndexToOctNode Child_YZ;
         public IndexToOctNode ChildX_Z;
@@ -34,15 +36,16 @@ namespace SpatialPartitioning
         public IndexToOctNode Child___;
         #endregion
         
-        public OctNode(OctSettings settings, AABB aabb)
+        public OctNode(IndexToOctNode index, AABB aabb, OctSettings settings)
         {
-            Settings = settings;
+            SelfIndex = index;
             AABB = aabb;
+            Settings = settings;
 
             FirstValue = IndexToOctValue.Empty();
             ValueCount = 0;
             IsLeaf = 1;
-            
+
             ChildXYZ = IndexToOctNode.Empty();
             Child_YZ = IndexToOctNode.Empty();
             ChildX_Z = IndexToOctNode.Empty();
@@ -93,6 +96,9 @@ namespace SpatialPartitioning
             {
                 InsertValueInChildren(nodes, values, value);
             }
+            
+            //persist values set via this method
+            SelfIndex.SetElement(nodes, this);
         }
 
         public OctValue GetLastValue(NativeList<OctValue> values)
@@ -172,7 +178,7 @@ namespace SpatialPartitioning
             var childIndex = GetChildNodeFromOctant(octant);
             
             //if it doesn't exist, create new child and set to appropriate octNode child member
-            if (childIndex.HasValue())
+            if (!childIndex.HasValue())
             {
                 childIndex = CreateChildNodeAtOctant(nodes, octant);
             }
@@ -192,7 +198,7 @@ namespace SpatialPartitioning
             var childOffset = (Vector3) octantPosition * quarterWidth;
             var childPos = AABB.Center + childOffset;
 
-            var newOctNode = new OctNode(Settings, new AABB(childPos, quarterWidth));
+            var newOctNode = new OctNode(new IndexToOctNode(nodes.Length), new AABB(childPos, quarterWidth), Settings);
 
             var childIndex = IndexToOctNode.Empty();
             childIndex.AddElement(nodes, newOctNode);

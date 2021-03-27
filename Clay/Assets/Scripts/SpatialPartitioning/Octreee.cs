@@ -24,7 +24,7 @@ namespace SpatialPartitioning
         {
             Nodes.Clear();
             Values.Clear();
-            Nodes.Add(new OctNode(Settings, aabb));
+            Nodes.Add(new OctNode(new IndexToOctNode(Nodes.Length), aabb,Settings));
         }
 
         public void Insert(Vector3 point)
