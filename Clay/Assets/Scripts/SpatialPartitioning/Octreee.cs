@@ -1,9 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using ClaySimulation;
 using Collision;
-using SpatialPartitioning;
 using Unity.Collections;
 using UnityEngine;
 
@@ -15,20 +13,15 @@ namespace SpatialPartitioning
         public NativeList<OctValue> Values;
         public OctSettings Settings;
 
-        public float MinHalfSize;
-        public int MaxValuesPerNode = 16; 
-
         public Octree(OctSettings settings)
         {
-            Nodes  = new List<OctNode> (128);
-            Values = new List<OctValue>(1024);
+            Nodes  = new NativeList<OctNode> (128, Allocator.Persistent);
+            Values = new NativeList<OctValue>(1024, Allocator.Persistent);
             Settings = settings;
         }
 
-        public void CleanAndPrepareForInsertion(AABB aabb, float maxHalfSize, int maxValuesPerNode)
+        public void CleanAndPrepareForInsertion(AABB aabb)
         {
-            MaxValuesPerNode = maxValuesPerNode;
-            MinHalfSize = maxHalfSize;
             Nodes.Clear();
             Values.Clear();
             Nodes.Add(new OctNode(Nodes, Values, Settings, aabb));

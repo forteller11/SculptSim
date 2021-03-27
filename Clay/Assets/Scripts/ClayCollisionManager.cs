@@ -4,6 +4,7 @@ using Collision;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using SpatialPartitioning;
+using Unity.Collections;
 using Random = Unity.Mathematics.Random;
 
 
@@ -16,9 +17,8 @@ namespace ClaySimulation
         [FoldoutGroup("Spawn")] [SerializeField] private int _spawnOnStart = 10;
         [FoldoutGroup("Spawn")] [SerializeField] private float _radiusToSpawnIn = 5;
         
-        [FoldoutGroup("Octree")] [SerializeField] private float _octreeRadiusMultiplier = 1.5f;
-        [FoldoutGroup("Octree")] [SerializeField] private int _maxValuesPerNode = 16;
-
+        [FoldoutGroup("Octree")] [SerializeField] private OctSettings _octSettings;
+        [FoldoutGroup("Octree")] [SerializeField] private float _octreeRadiusMultiplier;
 
         [FoldoutGroup("Sim Settings")] [SerializeField] float _minRadius = 0;
         [FoldoutGroup("Sim Settings")] [SerializeField] float _maxRadius = 2;
@@ -33,7 +33,7 @@ namespace ClaySimulation
         [ShowInInspector] private List<Clay> _particles;
         [ShowInInspector] private List<Vector3> _particlesToMove;
         [ShowInInspector] private List<Vector4> _particlePositions;
-        [ShowInInspector] private List<Vector3> _queryResults;
+        [ShowInInspector] private NativeList<Vector3> _queryResults;
         [ShowInInspector] private Material _material;
         
         private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
@@ -69,8 +69,8 @@ namespace ClaySimulation
             #endregion
             
             #region octree
-            Octree = new Octree();
-            _queryResults = new List<Vector3>(64);
+            Octree = new Octree(_octSettings);
+            _queryResults = new NativeList<Vector3>(128, Allocator.Persistent);
             #endregion
         }
 
@@ -92,7 +92,7 @@ namespace ClaySimulation
                 _queryResults.Clear();
                 Octree.QueryNonAlloc(querySphere, _queryResults);
                     
-                for (int j = 0; j < _queryResults.Count; j++)
+                for (int j = 0; j < _queryResults.Length; j++)
                 {
                     var p2Pos = _queryResults[j];
 
@@ -144,7 +144,7 @@ namespace ClaySimulation
         void ConstructOctree()
         {
             #region octree
-            Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier), _maxRadius/2, _maxValuesPerNode);
+            Octree.CleanAndPrepareForInsertion(new AABB(transform.position, Octree.Settings.MaxValuesPerNode));
             
             for (int i = 0; i < _particles.Count; i++)
             {
@@ -194,7 +194,7 @@ namespace ClaySimulation
             if (Octree != null && DrawOctree)
             {
                 Random ran = Random.CreateFromIndex(3759);
-                for (int i = 0; i < Octree.Nodes.Count; i++)
+                for (int i = 0; i < Octree.Nodes.Length; i++)
                 {
                     var nodes = Octree.Nodes;
                     var width = nodes[i].AABB.HalfWidth * 2;
@@ -206,19 +206,13 @@ namespace ClaySimulation
                     float offset = 0.995f;
                     Gizmos.DrawWireCube(nodes[i].AABB.Center, new Vector3(width, width, width) * offset);
 
-                    OctValue currentVal = nodes[i].FirstValue;
-                    while (currentVal != null)
+                    nodes[i].GetValues(out var nodeValues);
+                    for (int j = 0; j < nodeValues.Length; j++)
                     {
-                        Gizmos.DrawSphere(currentVal.Position, 0.05f);
-                        currentVal = currentVal.NextValue;
+                        Gizmos.DrawSphere(nodeValues[j].Position, 0.05f);
                     }
+               
                 }
-                
-                // Gizmos.color = Color.green;
-                // for (int i = 0; i < _queryResults.Count; i++)
-                // {
-                //     Gizmos.DrawSphere(_queryResults[i], 0.1f);
-                // }
                 
             }
         }

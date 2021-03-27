@@ -118,9 +118,8 @@ namespace SpatialPartitioning
         
         public int GetValues(out NativeList<OctValue> results, Allocator allocator = Allocator.Temp)
         {
-            results = new NativeList<OctValue>(allocator);
-            results.Capacity = Settings.MaxValuesPerNode;
-            
+            results = new NativeList<OctValue>(Settings.MaxValuesPerNode, allocator);
+
             IndexToValue<OctValue> currentValueIndex = FirstValue;
             while (currentValueIndex.HasValue())
             {
