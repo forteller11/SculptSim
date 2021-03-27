@@ -16,7 +16,6 @@ namespace SpatialPartitioning
     public struct OctNode
     {
         #region members
-        
         public OctSettings Settings;
         public NativeList<OctValue> Values;
         public NativeList<OctNode> Nodes;
@@ -36,12 +35,15 @@ namespace SpatialPartitioning
         public IndexToValue<OctNode> Child_Y_;
         public IndexToValue<OctNode> Child___;
         #endregion
-
-        #region constructors
-        public OctNode(Octree tree, AABB aabb)
+        
+        public OctNode(NativeList<OctNode> nodes, NativeList<OctValue> values, OctSettings settings, AABB aabb)
         {
+            Nodes = nodes;
+            Values = values;
+            Settings = settings;
             AABB = aabb;
 
+            FirstValue = IndexToValue<OctValue>.Empty();
             ValueCount = 0;
             IsLeaf = true;
             
@@ -54,37 +56,39 @@ namespace SpatialPartitioning
             Child_Y_ = IndexToValue<OctNode>.Empty();
             Child___ = IndexToValue<OctNode>.Empty();
         }
-        
-        #endregion
-        
+
         public void InsertValueInSelfOrChildren(OctValue value)
         {
-            
             if (IsLeaf)
             {
                 InsertValueInSelf(value);
 
-                float theoreticalChildHalfWidths = AABB.HalfWidth / 2f;
+                float theoreticalChildHalfWidth = AABB.HalfWidth / 2f;
                 //if exceeded maxium allowed values,
                 //and child would not be less than min half width
                 if (ValueCount > Settings.MaxValuesPerNode && 
-                    theoreticalChildHalfWidths > Settings.MinHalfSize)
+                    theoreticalChildHalfWidth > Settings.MinHalfSize)
                 {
                     //redistribute values into children
-                    OctValue currentValue = FirstValue.GetElement();
-                    while (currentValue.NextValue.HasValue())
+                    IndexToValue<OctValue> currentValueIndex = FirstValue;
+                    while (currentValueIndex.HasValue())
                     {
-                        var nextValue = currentValue.NextValue;
+                        var currentValue = currentValueIndex.GetElement(Values);
+                        var nextValueIndexCache = currentValue.NextValue;
+                        
+                        //break up linked list (child will reconstruct it appropriately)
                         currentValue.NextValue = IndexToValue<OctValue>.Empty();
+                        currentValueIndex.SetElement(Values, currentValue);
                         
                         InsertValueInChildren(currentValue);
                         
-                        currentValue = nextValue;
+                        currentValueIndex = nextValueIndexCache;
                     }
 
                     //this node is no longer a leaf, revoke ownership of values
-                    IsLeaf = false;
-                    FirstValue = null;
+                    FirstValue = IndexToValue<OctValue>.Empty();
+                    IsLeaf = false; //todo: remove use of IsLeaf by just using if (valueCount > SpecialReallyBigNumber)
+                    ValueCount = 0;
                 }
 
             }
@@ -111,17 +115,24 @@ namespace SpatialPartitioning
             
             return previousValue.GetElement(Values);
         }
-
-        public void ForEachValue(Action<OctValue> action)
+        
+        public int GetValues(out NativeList<OctValue> results, Allocator allocator = Allocator.Temp)
         {
-            OctValue currentValue = FirstValue;
-            while (currentValue != null)
+            results = new NativeList<OctValue>(allocator);
+            results.Capacity = Settings.MaxValuesPerNode;
+            
+            IndexToValue<OctValue> currentValueIndex = FirstValue;
+            while (currentValueIndex.HasValue())
             {
-                action.Invoke(currentValue);
-                currentValue = currentValue.NextValue;
+                var currentElement = currentValueIndex.GetElement(Values); 
+                currentValueIndex = currentElement.NextValue;
+                results.Add(currentElement);
             }
+
+            return results.Length;
         }
         
+        //todo turn into array/native... block allocate children all 8 at once, store other children implicitely
         public void ForEachChild(Action<OctNode> action)
         {
             if (Child___.HasValue() ) action.Invoke(Child___.GetElement(Nodes) );
@@ -138,7 +149,7 @@ namespace SpatialPartitioning
         {
             var octant = OctantAtPosition(point);
             var child = GetChildNodeFromOctant(octant);
-            return child;
+            return child.GetElement(Nodes);
         }
         
         void InsertValueInSelf(OctValue value)
@@ -163,15 +174,15 @@ namespace SpatialPartitioning
         {
             var point = value.Position;
             var octant = OctantAtPosition(point);
-            var child = GetChildNodeFromOctant(octant);
+            var childIndex = GetChildNodeFromOctant(octant);
             
             //if it doesn't exist, create new child and set to appropriate octNode child member
-            if (child == null)
+            if (childIndex.HasValue())
             {
-                child = CreateChildNodeAtOctant(octant);
+                childIndex = CreateChildNodeAtOctant(octant);
             }
             
-            child.InsertValueInSelfOrChildren(value);
+            childIndex.GetElement(Nodes).InsertValueInSelfOrChildren(value);
         }
         
         /// <summary>
@@ -179,22 +190,20 @@ namespace SpatialPartitioning
         /// </summary>
         /// <param name="octant"></param>
         /// <returns>index of child in octnode array</returns>
-        OctNode CreateChildNodeAtOctant(Octant octant)
+        IndexToValue<OctNode> CreateChildNodeAtOctant(Octant octant)
         {
-            var tree = Tree;
-            var nodes = Tree.Nodes;
-            
             var octantPosition = OctantToVector3Int(octant);
             var quarterWidth = AABB.HalfWidth / 2;
             var childOffset = (Vector3) octantPosition * quarterWidth;
             var childPos = AABB.Center + childOffset;
 
-            var newOctNode = new OctNode(tree, new AABB(childPos, quarterWidth));
-            
-            nodes.Add(newOctNode);
+            var newOctNode = new OctNode(Nodes, Values, Settings, new AABB(childPos, quarterWidth));
+
+            var childIndex = IndexToValue<OctNode>.Empty();
+            childIndex.AddElement(Nodes, newOctNode);
             SetChildNodeFromOctant(octant, newOctNode);
 
-            return newOctNode;
+            return childIndex;
         }
 
         ///<returns>returns values between [-1,-1,-1] and [1,1,1]</returns>
@@ -222,42 +231,12 @@ namespace SpatialPartitioning
             return x | y | z;
         }
         
-        // public List<OctNode> ChildrenInsideSphere(Sphere sphere)
-        // {
-        //     //todo convert to struct then native list NativeList<OctNode>(Allocator.Temp);
-        //     List<OctNode> results = new List<OctNode>();
-        //     ForEachChild((child) =>
-        //     {
-        //         if (Common.SphereAABBOverlap(sphere, AABB))
-        //         {
-        //             results.Add(child);
-        //         }
-        //     });
-        //     return results;
-        // }
-
-        public bool SphereOverlaps(Sphere sphere) => Intersection.SphereAABBOverlap(sphere, AABB);
-        public bool PointOverlaps(Vector3 position) => Intersection.PointAABBOverlap(position, AABB);
-        
-        
-        // public NativeArray<int> OctantsAtPosition(Vector3 point)
-        // {
-        //     var boxCenter = Center;
-        //     
-        //     int x = point.x > boxCenter.x ? 0b_100 : 0;
-        //     int y = point.y > boxCenter.y ? 0b_010 : 0;
-        //     int z = point.z > boxCenter.z ? 0b_001 : 0;
-        //
-        //     return x | y | z;
-        // }
-        
-        
         /// <summary>
         /// 
         /// </summary>
         /// <param name="octant"></param>
         /// <returns> returns -1 if no child exists, otherwise the index into the nodes element</returns>
-        OctNode GetChildNodeFromOctant(Octant octant)
+        IndexToValue<OctNode> GetChildNodeFromOctant(Octant octant)
         {
             switch (octant)
             {
@@ -277,17 +256,20 @@ namespace SpatialPartitioning
         {
             switch (octant)
             {
-                case Octant.XYZ: ChildXYZ = value; return;
-                case Octant._YZ: Child_YZ = value; return;
-                case Octant.X_Z: ChildX_Z = value; return;
-                case Octant.XY_: ChildXY_ = value; return;
-                case Octant.__Z: Child__Z = value; return;
-                case Octant.X__: ChildX__ = value; return;
-                case Octant._Y_: Child_Y_ = value; return;
-                case Octant.___: Child___ = value; return;
+                case Octant.XYZ: ChildXYZ.SetElement(Nodes, value); return;
+                case Octant._YZ: Child_YZ.SetElement(Nodes, value); return;
+                case Octant.X_Z: ChildX_Z.SetElement(Nodes, value); return;
+                case Octant.XY_: ChildXY_.SetElement(Nodes, value); return;
+                case Octant.__Z: Child__Z.SetElement(Nodes, value); return;
+                case Octant.X__: ChildX__.SetElement(Nodes, value); return;
+                case Octant._Y_: Child_Y_.SetElement(Nodes, value); return;
+                case Octant.___: Child___.SetElement(Nodes, value); return;
                 default: throw new ArgumentException("octant must be between values 0 to 7!");
             }
         }
+        
+        public bool SphereOverlaps(Sphere sphere) => Intersection.SphereAABBOverlap(sphere, AABB);
+        public bool PointOverlaps(Vector3 position) => Intersection.PointAABBOverlap(position, AABB);
         
     }
 }

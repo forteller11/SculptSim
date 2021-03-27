@@ -4,22 +4,25 @@ using System.Collections.Generic;
 using ClaySimulation;
 using Collision;
 using SpatialPartitioning;
+using Unity.Collections;
 using UnityEngine;
 
 namespace SpatialPartitioning
 {
     public class Octree
     {
-        public List<OctNode> Nodes;
-        public List<OctValue> Values;
+        public NativeList<OctNode> Nodes;
+        public NativeList<OctValue> Values;
+        public OctSettings Settings;
 
         public float MinHalfSize;
         public int MaxValuesPerNode = 16; 
 
-        public Octree()
+        public Octree(OctSettings settings)
         {
             Nodes  = new List<OctNode> (128);
             Values = new List<OctValue>(1024);
+            Settings = settings;
         }
 
         public void CleanAndPrepareForInsertion(AABB aabb, float maxHalfSize, int maxValuesPerNode)
@@ -28,7 +31,7 @@ namespace SpatialPartitioning
             MinHalfSize = maxHalfSize;
             Nodes.Clear();
             Values.Clear();
-            Nodes.Add(new OctNode(this, aabb));
+            Nodes.Add(new OctNode(Nodes, Values, Settings, aabb));
         }
 
         public void Insert(Vector3 point)
@@ -47,16 +50,16 @@ namespace SpatialPartitioning
             
         }
 
-        public bool QueryNonAlloc(Sphere sphere, List<Vector3> results)
+        public bool QueryNonAlloc(Sphere sphere, NativeList<Vector3> results)
         {
             var root = Nodes[0];
             if (root.SphereOverlaps(sphere))
                 GetOverlappingChildrenOrAddToResultsDepthFirst(sphere, root, results);
         
-            return results.Count > 0;
+            return results.Length > 0;
         }
 
-        void GetOverlappingChildrenOrAddToResultsDepthFirst(Sphere sphere, OctNode node, List<Vector3> results)
+        void GetOverlappingChildrenOrAddToResultsDepthFirst(Sphere sphere, OctNode node, NativeList<Vector3> results)
         {
             if (!node.IsLeaf)
             {
@@ -69,10 +72,12 @@ namespace SpatialPartitioning
             }
             else
             {
-                node.ForEachValue((value) =>
+                node.GetValues(out var values);
+
+                for (int i = 0; i < values.Length; i++)
                 {
-                    results.Add(value.Position);
-                });
+                    results.Add(values[i].Position);
+                }
             }
         }
         

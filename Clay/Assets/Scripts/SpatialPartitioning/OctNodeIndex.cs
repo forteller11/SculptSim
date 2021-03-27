@@ -11,6 +11,7 @@ namespace SpatialPartitioning
     public struct IndexToValue<T> where T : struct
     {
         private int _index;
+        public int Index => _index;
 
         public IndexToValue(int index) => _index = index;
         
