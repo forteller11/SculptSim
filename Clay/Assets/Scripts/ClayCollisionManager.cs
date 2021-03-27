@@ -1,4 +1,5 @@
 ﻿
+using System;
 using System.Collections.Generic;
 using Collision;
 using Sirenix.OdinInspector;
@@ -168,9 +169,13 @@ namespace ClaySimulation
             _material.SetVectorArray(PARTICLES_UNIFORM, _particlePositions);
             _material.SetInt(PARTICLES_LENGTH_UNIFORM, _particlePositions.Count);
         }
-        
 
-        
+        private void OnDestroy()
+        {
+            Octree.Dispose();
+            _queryResults.Dispose();
+        }
+
         private void OnDrawGizmosSelected()
         {
             if (_particles != null && DrawParticles)
@@ -203,7 +208,7 @@ namespace ClaySimulation
                     float offset = 0.995f;
                     Gizmos.DrawWireCube(nodes[i].AABB.Center, new Vector3(width, width, width) * offset);
 
-                    nodes[i].GetValues(out var nodeValues);
+                    nodes[i].GetValues(Octree.Values, out var nodeValues);
                     for (int j = 0; j < nodeValues.Length; j++)
                         Gizmos.DrawSphere(nodeValues[j].Position, 0.05f);
                     nodeValues.Dispose();

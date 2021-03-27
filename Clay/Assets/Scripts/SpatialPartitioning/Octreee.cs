@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace SpatialPartitioning
 {
-    public class Octree
+    public class Octree : IDisposable
     {
         public NativeList<OctNode> Nodes;
         public NativeList<OctValue> Values;
@@ -24,7 +24,7 @@ namespace SpatialPartitioning
         {
             Nodes.Clear();
             Values.Clear();
-            Nodes.Add(new OctNode(Nodes, Values, Settings, aabb));
+            Nodes.Add(new OctNode(Settings, aabb));
         }
 
         public void Insert(Vector3 point)
@@ -34,7 +34,7 @@ namespace SpatialPartitioning
             {
                 var octValue = OctValue.CreateTail(point);
                 Values.Add(octValue);
-                root.InsertValueInSelfOrChildren(octValue);
+                root.InsertValueInSelfOrChildren(Nodes, Values, octValue);
             }
             else
             {
@@ -57,7 +57,7 @@ namespace SpatialPartitioning
             if (node.IsLeaf != 0)
             {
                 //todo remove closure allocation...
-                node.ForEachChild((child) =>
+                node.ForEachChild(Nodes, (child) =>
                 {
                     if (child.SphereOverlaps(sphere))
                         GetOverlappingChildrenOrAddToResultsDepthFirst(sphere, child, results);
@@ -65,12 +65,17 @@ namespace SpatialPartitioning
             }
             else
             {
-                node.GetValues(out var values);
+                node.GetValues(Values, out var values);
                 for (int i = 0; i < values.Length; i++)
                     results.Add(values[i].Position);
                 values.Dispose();
             }
         }
-        
+
+        public void Dispose()
+        {
+            Nodes.Dispose();
+            Values.Dispose();
+        }
     }
 }
