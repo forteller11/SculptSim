@@ -3,16 +3,16 @@ using UnityEngine;
 
 namespace SpatialPartitioning
 {
-    public class OctValue
+    public struct OctValue
     {
         public Vector3 Position;
-        public OctValue NextValue;
+        public IndexToValue<OctValue> NextValue;
 
         public static OctValue CreateTail(Vector3 value)
         {
             var octValue = new OctValue();
             octValue.Position = value;
-            octValue.NextValue = null;
+            octValue.NextValue = IndexToValue<OctValue>.Empty();
             return octValue;
         }
 

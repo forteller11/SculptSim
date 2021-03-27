@@ -9,61 +9,50 @@ using UnityEngine;
 
 namespace SpatialPartitioning
 {
-
-    /* -------------
-        where XYZ == plus in those axis, and _ means minus in those axis
-          > so XYZ is right, upper, forward AABB
-          > while ___ is left, down, backwards AABB
-          >  X__ is right, dowm, backwards AAB
-        --------------------------- */
-    [Flags]
-    public enum Octant
-    {
-        ___ = 0b_000,
-        X__ = 0b_100,
-        _Y_ = 0b_010,
-        __Z = 0b_001,
-        XY_ = X__ | _Y_,
-        X_Z = X__ | __Z,
-        _YZ = _Y_ | __Z,
-        XYZ = X__ | _Y_ | __Z,
-    };
     /* ---------------------
      * parent nodes will never contain elements,
      * leaf nodes will always contain elements
      --------------------*/
-    public class OctNode
+    public struct OctNode
     {
         #region members
-
-        public Octree Tree;
-
-        //todo solution??
-        // public int Index;
+        
+        public OctSettings Settings;
+        public NativeList<OctValue> Values;
+        public NativeList<OctNode> Nodes;
+        
         public AABB AABB;
         
-        public OctValue FirstValue;
+        public IndexToValue<OctValue> FirstValue;
         public int ValueCount;
         public bool IsLeaf;
 
-        public OctNode ChildXYZ;
-        public OctNode Child_YZ;
-        public OctNode ChildX_Z;
-        public OctNode ChildXY_;
-        public OctNode Child__Z;
-        public OctNode ChildX__;
-        public OctNode Child_Y_;
-        public OctNode Child___;
+        public IndexToValue<OctNode> ChildXYZ;
+        public IndexToValue<OctNode> Child_YZ;
+        public IndexToValue<OctNode> ChildX_Z;
+        public IndexToValue<OctNode> ChildXY_;
+        public IndexToValue<OctNode> Child__Z;
+        public IndexToValue<OctNode> ChildX__;
+        public IndexToValue<OctNode> Child_Y_;
+        public IndexToValue<OctNode> Child___;
         #endregion
 
         #region constructors
         public OctNode(Octree tree, AABB aabb)
         {
-            Tree = tree;
             AABB = aabb;
 
             ValueCount = 0;
             IsLeaf = true;
+            
+            ChildXYZ = IndexToValue<OctNode>.Empty();
+            Child_YZ = IndexToValue<OctNode>.Empty();
+            ChildX_Z = IndexToValue<OctNode>.Empty();
+            ChildXY_ = IndexToValue<OctNode>.Empty();
+            Child__Z = IndexToValue<OctNode>.Empty();
+            ChildX__ = IndexToValue<OctNode>.Empty();
+            Child_Y_ = IndexToValue<OctNode>.Empty();
+            Child___ = IndexToValue<OctNode>.Empty();
         }
         
         #endregion
@@ -78,15 +67,15 @@ namespace SpatialPartitioning
                 float theoreticalChildHalfWidths = AABB.HalfWidth / 2f;
                 //if exceeded maxium allowed values,
                 //and child would not be less than min half width
-                if (ValueCount > Tree.MaxValuesPerNode && 
-                    theoreticalChildHalfWidths > Tree.MinHalfSize)
+                if (ValueCount > Settings.MaxValuesPerNode && 
+                    theoreticalChildHalfWidths > Settings.MinHalfSize)
                 {
                     //redistribute values into children
-                    OctValue currentValue = FirstValue;
-                    while (currentValue != null)
+                    OctValue currentValue = FirstValue.GetElement();
+                    while (currentValue.NextValue.HasValue())
                     {
                         var nextValue = currentValue.NextValue;
-                        currentValue.NextValue = null;
+                        currentValue.NextValue = IndexToValue<OctValue>.Empty();
                         
                         InsertValueInChildren(currentValue);
                         
@@ -108,16 +97,19 @@ namespace SpatialPartitioning
 
         public OctValue GetLastValue()
         {
-            OctValue currentValue = FirstValue;
-            OctValue previousValue = null;
+            IndexToValue<OctValue> currentValue = new IndexToValue<OctValue>();
+            IndexToValue<OctValue> previousValue = IndexToValue<OctValue>.Empty();
             
-            while (currentValue != null)
+            while (currentValue.HasValue())
             {
                 previousValue = currentValue;
-                currentValue = currentValue.NextValue;
+                currentValue = currentValue.GetElement(Values).NextValue;
             }
 
-            return previousValue;
+            if (!previousValue.HasValue())
+                throw new Exception("Cant call last value if there isn't a first value!");
+            
+            return previousValue.GetElement(Values);
         }
 
         public void ForEachValue(Action<OctValue> action)
@@ -132,18 +124,16 @@ namespace SpatialPartitioning
         
         public void ForEachChild(Action<OctNode> action)
         {
-            if (Child___ != null) action.Invoke(Child___);
-            if (ChildX__ != null) action.Invoke(ChildX__);
-            if (Child_Y_ != null) action.Invoke(Child_Y_);
-            if (Child__Z != null) action.Invoke(Child__Z);
-            if (ChildXY_ != null) action.Invoke(ChildXY_);
-            if (ChildX_Z != null) action.Invoke(ChildX_Z);
-            if (Child_YZ != null) action.Invoke(Child_YZ);
-            if (ChildXYZ != null) action.Invoke(ChildXYZ);
+            if (Child___.HasValue() ) action.Invoke(Child___.GetElement(Nodes) );
+            if (ChildX__.HasValue() ) action.Invoke(ChildX__.GetElement(Nodes) );
+            if (Child_Y_.HasValue() ) action.Invoke(Child_Y_.GetElement(Nodes) );
+            if (Child__Z.HasValue() ) action.Invoke(Child__Z.GetElement(Nodes) );
+            if (ChildXY_.HasValue() ) action.Invoke(ChildXY_.GetElement(Nodes) );
+            if (ChildX_Z.HasValue() ) action.Invoke(ChildX_Z.GetElement(Nodes) );
+            if (Child_YZ.HasValue() ) action.Invoke(Child_YZ.GetElement(Nodes) );
+            if (ChildXYZ.HasValue() ) action.Invoke(ChildXYZ.GetElement(Nodes) );
         }
-
-        //todo make getOctantS from AABB.
-        //todo get children from octant
+        
         public OctNode GetChildFromPoint(Vector3 point)
         {
             var octant = OctantAtPosition(point);
@@ -154,15 +144,15 @@ namespace SpatialPartitioning
         void InsertValueInSelf(OctValue value)
         {
             //if no values currently in node
-            if (FirstValue == null)
+            if (!FirstValue.HasValue())
             {
-                FirstValue = value;
+                FirstValue.AddElement(Values, value);
             }
             //otherwise find last element and link to new element
             else
             {
                 var lastElement = GetLastValue();
-                lastElement.NextValue = value;
+                lastElement.NextValue.AddElement(Values, value);
             }
 
             ValueCount++;
