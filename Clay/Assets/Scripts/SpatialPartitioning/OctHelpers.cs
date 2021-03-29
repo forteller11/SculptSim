@@ -16,5 +16,7 @@ namespace SpatialPartitioning
             
             return scaledBetweenOneAndMinusOne;
         }
+        
+        
     }
 }

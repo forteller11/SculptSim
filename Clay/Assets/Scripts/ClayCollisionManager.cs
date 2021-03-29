@@ -208,7 +208,7 @@ namespace ClaySimulation
                     float offset = 0.995f;
                     Gizmos.DrawWireCube(nodes[i].AABB.Center, new Vector3(width, width, width) * offset);
 
-                    nodes[i].GetValues(Octree.Values, out var nodeValues);
+                    Octree.GetValuesAsArray(nodes[i], out var nodeValues);
                     for (int j = 0; j < nodeValues.Length; j++)
                         Gizmos.DrawSphere(nodeValues[j].Position, 0.05f);
                     nodeValues.Dispose();

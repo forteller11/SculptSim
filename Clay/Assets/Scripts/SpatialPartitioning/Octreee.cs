@@ -25,7 +25,7 @@ namespace SpatialPartitioning
         {
             Nodes.Clear();
             Values.Clear();
-            Nodes.Add(new OctNode(new IndexToOctNode(Nodes.Length), aabb, Settings));
+            Nodes.Add(new OctNode(Settings, aabb));
         }
 
         public void Insert(Vector3 point)
@@ -56,15 +56,15 @@ namespace SpatialPartitioning
 
                 if (!node.FirstValue.HasValue())
                 {
-                    node.FirstValue.AddElement(Values, pointValue);
+                    node.FirstValue = IndexToOctValue.NewElement(Values, pointValue);
                 }
                 //otherwise find last element and link to new element
                 else
                 {
-                    var lastElementIndex = GetTail(node.FirstValue);
-                    var lastElement = lastElementIndex.GetElement(Values);
-                    lastElement.NextValue.AddElement(Values, pointValue);
-                    lastElementIndex.SetElement(Values, lastElement);
+                    var lastValueIndex = GetValueTail(node.FirstValue);
+                    var lastValue = lastValueIndex.GetElement(Values);
+                    lastValue.NextValue = IndexToOctValue.NewElement(Values, pointValue);
+                    lastValueIndex.SetElement(Values, lastValue); //persist last element.NextValue changes to global array
                 }
 
                 node.ValueCount++;
@@ -135,25 +135,7 @@ namespace SpatialPartitioning
             }
         }
 
-        
-        IndexToOctNode CreateChildNodeAtOctant(NativeList<OctNode> nodes, Octant octant)
-        {
-            var octantPosition = OctHelpers.OctantToVector3Int(octant);
-            var quarterWidth = nodes.AABB.HalfWidth / 2;
-            var childOffset = (Vector3) octantPosition * quarterWidth;
-            var childPos = AABB.Center + childOffset;
-
-            var childNode = new OctNode(new IndexToOctNode(nodes.Length), new AABB(childPos, quarterWidth), Settings);
-            var childNodeIndex = IndexToOctNode.Empty();
-            childNodeIndex.AddElement(nodes, childNode);
-            
-            SetChildNodeFromOctant(nodes, octant, childNode);
-            SelfIndex.SetElement(nodes, this);
-
-            return childNodeIndex;
-        }
-        
-        public IndexToOctValue GetTail(IndexToOctValue octValueIndex)
+        public IndexToOctValue GetValueTail(IndexToOctValue octValueIndex)
         {
             IndexToOctValue currentValue = octValueIndex;
             IndexToOctValue previousValue = IndexToOctValue.Empty();
@@ -170,8 +152,7 @@ namespace SpatialPartitioning
             return previousValue;
         }
 
-
-
+        #region querying
         public bool QueryNonAlloc(Sphere sphere, NativeList<Vector3> results)
         {
             var root = Nodes[0];
@@ -194,12 +175,31 @@ namespace SpatialPartitioning
             }
             else
             {
-                node.GetValues(Values, out var values);
+                GetValuesAsArray(in node, out var values);
                 for (int i = 0; i < values.Length; i++)
                     results.Add(values[i].Position);
                 values.Dispose();
             }
         }
+        
+        /// <summary>
+        /// converts linked list of values of a node to a contiguous nativelist
+        /// </summary>
+        public int GetValuesAsArray(in OctNode node, out NativeList<OctValue> results, Allocator allocator = Allocator.Temp)
+        {
+            results = new NativeList<OctValue>(Settings.MaxValuesPerNode, allocator);
+
+            IndexToOctValue currentValueIndex = node.FirstValue;
+            while (currentValueIndex.HasValue())
+            {
+                var currentElement = currentValueIndex.GetElement(Values); 
+                currentValueIndex = currentElement.NextValue;
+                results.Add(currentElement);
+            }
+
+            return results.Length;
+        }
+        #endregion
 
         public void Dispose()
         {
