@@ -16,15 +16,21 @@ namespace SpatialPartitioning
         public IndexToOctNode(int index) => _index = index;
 
         public static IndexToOctNode Empty() => new IndexToOctNode(-1);
-        
-        
+        public static IndexToOctNode NewElement(NativeList<OctNode> list, OctNode value)
+        {
+            var index = new IndexToOctNode(-1);
+            index.AddElement(list, value);
+            return index;
+        }
+
+
         public bool HasValue() => _index >= 0;
         
         public OctNode GetElement(NativeList<OctNode> list) => list[_index];
 
         public void SetElement(NativeList<OctNode> list, OctNode value) => list[_index] = value;
         
-        public void AddElement(NativeList<OctNode> list, OctNode value)
+        void AddElement(NativeList<OctNode> list, OctNode value)
         {
             _index = list.Length;
             list.Add(value);

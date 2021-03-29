@@ -36,9 +36,8 @@ namespace SpatialPartitioning
         public IndexToOctNode Child___;
         #endregion
         
-        public OctNode(IndexToOctNode index, AABB aabb, OctSettings settings)
+        public OctNode(OctSettings settings, AABB aabb)
         {
-            SelfIndex = index;
             AABB = aabb;
             Settings = settings;
 
@@ -225,18 +224,18 @@ namespace SpatialPartitioning
             return childNodeIndex;
         }
 
-        ///<returns>returns values between [-1,-1,-1] and [1,1,1]</returns>
-        Vector3Int OctantToVector3Int(Octant octant)
-        {
-            int x = (int) (octant & Octant.X__) >> 2;
-            int y = (int) (octant & Octant._Y_) >> 1;
-            int z = (int) (octant & Octant.__Z) >> 0;
-
-            var vec = (new Vector3Int(x, y, z));
-            var scaledBetweenOneAndMinusOne = (vec * 2) - new Vector3Int(1, 1, 1);
-            //todo debug
-            return scaledBetweenOneAndMinusOne;
-        }
+        // ///<returns>returns values between [-1,-1,-1] and [1,1,1]</returns>
+        // Vector3Int OctantToVector3Int(Octant octant)
+        // {
+        //     int x = (int) (octant & Octant.X__) >> 2;
+        //     int y = (int) (octant & Octant._Y_) >> 1;
+        //     int z = (int) (octant & Octant.__Z) >> 0;
+        //
+        //     var vec = (new Vector3Int(x, y, z));
+        //     var scaledBetweenOneAndMinusOne = (vec * 2) - new Vector3Int(1, 1, 1);
+        //     //todo debug
+        //     return scaledBetweenOneAndMinusOne;
+        // }
 
         /// <returns> returns number between 0-7 which represents what octant
         /// the largest bit represents x, middle represents y, smallest bit z</returns>
@@ -255,7 +254,7 @@ namespace SpatialPartitioning
         /// </summary>
         /// <param name="octant"></param>
         /// <returns> returns -1 if no child exists, otherwise the index into the nodes element</returns>
-        IndexToOctNode GetChildNodeFromOctant(Octant octant)
+        public IndexToOctNode GetChildNodeFromOctant(Octant octant)
         {
             switch (octant)
             {
@@ -271,18 +270,22 @@ namespace SpatialPartitioning
             }
         }
         
-        void SetChildNodeFromOctant(NativeList<OctNode> nodes, Octant octant, OctNode value)
+        ///<summary> Takes an octant and sets the corresponding child with the value</summary>
+        /// <Remarks>
+        /// Not persistant to array
+        /// </Remarks>
+        public void SetChildNodeIndexFromOctant(Octant octant, IndexToOctNode value)
         {
             switch (octant)
             {
-                case Octant.XYZ: ChildXYZ.SetElement(nodes, value); return;
-                case Octant._YZ: Child_YZ.SetElement(nodes, value); return;
-                case Octant.X_Z: ChildX_Z.SetElement(nodes, value); return;
-                case Octant.XY_: ChildXY_.SetElement(nodes, value); return;
-                case Octant.__Z: Child__Z.SetElement(nodes, value); return;
-                case Octant.X__: ChildX__.SetElement(nodes, value); return;
-                case Octant._Y_: Child_Y_.SetElement(nodes, value); return;
-                case Octant.___: Child___.SetElement(nodes, value); return;
+                case Octant.XYZ: ChildXYZ = value; return;
+                case Octant._YZ: Child_YZ = value; return;
+                case Octant.X_Z: ChildX_Z = value; return;
+                case Octant.XY_: ChildXY_ = value; return;
+                case Octant.__Z: Child__Z = value; return;
+                case Octant.X__: ChildX__ = value; return;
+                case Octant._Y_: Child_Y_ = value; return;
+                case Octant.___: Child___ = value; return;
                 default: throw new ArgumentException("octant must be between values 0 to 7!");
             }
         }

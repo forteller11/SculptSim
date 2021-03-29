@@ -20,6 +20,7 @@ namespace SpatialPartitioning
         X_Z = X__ | __Z,
         _YZ = _Y_ | __Z,
         XYZ = X__ | _Y_ | __Z,
+        
     }
     
 }

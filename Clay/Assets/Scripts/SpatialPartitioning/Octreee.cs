@@ -34,7 +34,7 @@ namespace SpatialPartitioning
             var root = rootIndex.GetElement(Nodes);
             if (root.PointOverlaps(point))
             {
-                InsertPointNodeOrChildren(rootIndex, point);
+                InsertPointInNodeOrChildren(rootIndex, point);
             }
             else
             {
@@ -43,7 +43,7 @@ namespace SpatialPartitioning
 
         }
 
-        private void InsertPointNodeOrChildren(IndexToOctNode nodeIndex, Vector3 point)
+        private void InsertPointInNodeOrChildren(IndexToOctNode nodeIndex, Vector3 point)
         {
             var node = nodeIndex.GetElement(Nodes);
 
@@ -88,7 +88,7 @@ namespace SpatialPartitioning
                         currentValue.NextValue = IndexToOctValue.Empty();
                         currentValueIndex.SetElement(Values, currentValue);
                         
-                        InsertValueInChildren(nodes, values, currentValue);
+                        InsertValueInChildren();
 
                         currentValueIndex = nextValueIndexCache;
                     }
@@ -103,32 +103,43 @@ namespace SpatialPartitioning
 
             else
             {
-                InsertValueInChildren(nodes, values, currentValue);
+                InsertValueInChildren();
             }
 
+            //persist state of node index by copying it to global array
             nodeIndex.SetElement(Nodes, node);
 
+            // <remarks> creates new children as necessary</remarks>
+            void InsertValueInChildren()
+            {
+                var octant = node.OctantAtPosition(point);
+                var childNodeIndex = node.GetChildNodeFromOctant(octant);
+            
+                //if it doesn't exist, create new child and set to appropriate octNode child member
+                if (!childNodeIndex.HasValue())
+                {
+                    #region create child node at octant
+                    var octantPosition = OctHelpers.OctantToVector3Int(octant);
+                    var quarterWidth = node.AABB.HalfWidth / 2;
+                    var childOffset = (Vector3) octantPosition * quarterWidth;
+                    var childPos = node.AABB.Center + childOffset;
+
+                    var childNode = new OctNode(Settings, new AABB(childPos, quarterWidth));
+                    childNodeIndex = IndexToOctNode.NewElement(Nodes, childNode);
+
+                    node.SetChildNodeIndexFromOctant(octant, childNodeIndex);
+                    #endregion
+                }
+
+                InsertPointInNodeOrChildren(childNodeIndex, point);
+            }
         }
 
-        // <remarks> creates new children as necessary</remarks>
-        void InsertValueInChildren(ref OctNode node, Vector3 point)
-        {
-            var octant = node.OctantAtPosition(point);
-            var childIndex = node.GetChildNodeFromOctant(octant);
-            
-            //if it doesn't exist, create new child and set to appropriate octNode child member
-            if (!childIndex.HasValue())
-            {
-                childIndex = CreateChildNodeAtOctant(nodes, octant);
-            }
-            
-            childIndex.GetElement(nodes).InsertValueInSelfOrChildren(nodes, values, value);
-        }
         
         IndexToOctNode CreateChildNodeAtOctant(NativeList<OctNode> nodes, Octant octant)
         {
-            var octantPosition = OctantToVector3Int(octant);
-            var quarterWidth = AABB.HalfWidth / 2;
+            var octantPosition = OctHelpers.OctantToVector3Int(octant);
+            var quarterWidth = nodes.AABB.HalfWidth / 2;
             var childOffset = (Vector3) octantPosition * quarterWidth;
             var childPos = AABB.Center + childOffset;
 

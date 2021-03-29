@@ -16,6 +16,12 @@ namespace SpatialPartitioning
         public IndexToOctValue(int index) => _index = index;
         
         public static IndexToOctValue Empty() => new IndexToOctValue(-1);
+        public static IndexToOctValue NewElement(NativeList<OctValue> list, OctValue value)
+        {
+            var index = new IndexToOctValue(-1);
+            index.AddElement(list, value);
+            return index;
+        }
         
         
         public bool HasValue() => _index >= 0;
@@ -24,7 +30,7 @@ namespace SpatialPartitioning
 
         public void SetElement(NativeList<OctValue> list, OctValue value) => list[_index] = value;
         
-        public void AddElement(NativeList<OctValue> list, OctValue value)
+        void AddElement(NativeList<OctValue> list, OctValue value)
         {
             _index = list.Length;
             list.Add(value);
