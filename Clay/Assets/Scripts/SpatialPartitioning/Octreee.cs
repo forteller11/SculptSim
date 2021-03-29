@@ -34,7 +34,8 @@ namespace SpatialPartitioning
             var root = rootIndex.GetElement(Nodes);
             if (root.PointOverlaps(point))
             {
-                InsertPointInNodeOrChildren(rootIndex, point);
+                IndexToOctValue valueIndex = IndexToOctValue.NewElement(Values, OctValue.CreateTail(point));
+                InsertPointInNodeOrChildren(rootIndex, valueIndex);
             }
             else
             {
@@ -44,27 +45,27 @@ namespace SpatialPartitioning
         }
 
         
-        private void InsertPointInNodeOrChildren(IndexToOctNode nodeIndex, Vector3 point)
+        private void InsertPointInNodeOrChildren(IndexToOctNode nodeIndex, IndexToOctValue valueIndex)
         {
             var node = nodeIndex.GetElement(Nodes);
 
             if (node.IsLeaf != 0)
             {
                 #region insert into self
-                var pointValue = OctValue.CreateTail(point);
-                
+
                 //if no values currently in node
                 if (!node.FirstValue.HasValue())
                 {
-                    node.FirstValue = IndexToOctValue.NewElement(Values, pointValue);
+                    node.FirstValue = valueIndex;
                 }
+                
                 //otherwise find last element and link to new element
                 else
                 {
-                    var lastValueIndex = GetValueTail(node.FirstValue);
+                    var lastValueIndex = GetTail(node.FirstValue);
                     
                     var lastValue = lastValueIndex.GetElement(Values);
-                    lastValue.NextValue = IndexToOctValue.NewElement(Values, pointValue);
+                    lastValue.NextValue = valueIndex;
                     
                     lastValueIndex.SetElement(Values, lastValue); //persist last element.NextValue changes to global array
                     
@@ -91,7 +92,6 @@ namespace SpatialPartitioning
                         currentValue.NextValue = IndexToOctValue.Empty();
                         currentValueIndex.SetElement(Values, currentValue);
                         
-                        nodeIndex.SetElement(Nodes, node);
                         InsertValueInChildren();
 
                         currentValueIndex = nextValueIndexCache;
@@ -116,7 +116,7 @@ namespace SpatialPartitioning
             // <remarks> creates new children as necessary</remarks>
             void InsertValueInChildren()
             {
-                var octant = node.OctantAtPosition(point);
+                var octant = node.OctantAtPosition(valueIndex.GetElement(Values).Position);
                 var childNodeIndex = node.GetChildNodeFromOctant(octant);
             
                 //if it doesn't exist, create new child and set to appropriate octNode child member
@@ -135,11 +135,11 @@ namespace SpatialPartitioning
                     #endregion
                 }
 
-                InsertPointInNodeOrChildren(childNodeIndex, point);
+                InsertPointInNodeOrChildren(childNodeIndex, valueIndex);
             }
         }
 
-        public IndexToOctValue GetValueTail(IndexToOctValue octValueIndex)
+        public IndexToOctValue GetTail(IndexToOctValue octValueIndex)
         {
             IndexToOctValue currentValue = octValueIndex;
             IndexToOctValue previousValue = IndexToOctValue.Empty();

@@ -35,14 +35,8 @@ namespace SpatialPartitioning
             _index = list.Length;
             list.Add(value);
         }
-        
-        public void SetElementOrAddIfEmpty(NativeList<OctNode> list, OctNode value)
-        {
-            if (HasValue())
-                SetElement(list, value);
-            else
-                AddElement(list, value);
-        }
+
+        public override string ToString() => _index.ToString();
 
     }
 }
