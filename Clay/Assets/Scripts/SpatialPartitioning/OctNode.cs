@@ -100,8 +100,25 @@ namespace SpatialPartitioning
             //persist values set via this method
             SelfIndex.SetElement(nodes, this);
         }
+        
+        public IndexToOctValue GetLastValue(IndexToOctValue value)
+        {
+            IndexToOctValue currentValue = value;
+            IndexToOctValue previousValue = IndexToOctValue.Empty();
+            
+            while (currentValue.HasValue())
+            {
+                previousValue = currentValue;
+                currentValue  = currentValue.GetElement(Values).NextValue;
+            }
 
-        public OctValue GetLastValue(NativeList<OctValue> values)
+            if (!previousValue.HasValue())
+                throw new Exception("Cant call last value if there isn't a first value!");
+            
+            return previousValue;
+        }
+
+        public OctValue GetTail(NativeList<OctValue> values)
         {
             IndexToOctValue currentValue = new IndexToOctValue();
             IndexToOctValue previousValue = IndexToOctValue.Empty();
@@ -163,7 +180,7 @@ namespace SpatialPartitioning
             //otherwise find last element and link to new element
             else
             {
-                var lastElement = GetLastValue(values);
+                var lastElement = GetTail(values);
                 lastElement.NextValue.AddElement(values, value);
             }
 
