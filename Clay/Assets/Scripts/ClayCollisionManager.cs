@@ -86,7 +86,7 @@ namespace ClaySimulation
             
             for (int i = 0; i < _particles.Count; i++)
             {
-                var p3 =  _particles[i].RigidBody.position;
+                var p3 =  _particles[i].transform.position;
                 Octree.Insert(p3);
             }
         }

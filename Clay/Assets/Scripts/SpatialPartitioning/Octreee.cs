@@ -43,6 +43,7 @@ namespace SpatialPartitioning
 
         }
 
+        
         private void InsertPointInNodeOrChildren(IndexToOctNode nodeIndex, Vector3 point)
         {
             var node = nodeIndex.GetElement(Nodes);
@@ -50,10 +51,9 @@ namespace SpatialPartitioning
             if (node.IsLeaf != 0)
             {
                 #region insert into self
-
-                //if no values currently in node
                 var pointValue = OctValue.CreateTail(point);
-
+                
+                //if no values currently in node
                 if (!node.FirstValue.HasValue())
                 {
                     node.FirstValue = IndexToOctValue.NewElement(Values, pointValue);
@@ -62,9 +62,12 @@ namespace SpatialPartitioning
                 else
                 {
                     var lastValueIndex = GetValueTail(node.FirstValue);
+                    
                     var lastValue = lastValueIndex.GetElement(Values);
                     lastValue.NextValue = IndexToOctValue.NewElement(Values, pointValue);
+                    
                     lastValueIndex.SetElement(Values, lastValue); //persist last element.NextValue changes to global array
+                    
                 }
 
                 node.ValueCount++;
@@ -88,6 +91,7 @@ namespace SpatialPartitioning
                         currentValue.NextValue = IndexToOctValue.Empty();
                         currentValueIndex.SetElement(Values, currentValue);
                         
+                        nodeIndex.SetElement(Nodes, node);
                         InsertValueInChildren();
 
                         currentValueIndex = nextValueIndexCache;
@@ -184,7 +188,7 @@ namespace SpatialPartitioning
         
         /// <summary>
         /// converts linked list of values of a node to a contiguous nativelist
-        /// </summary>
+        /// </summary> 
         public int GetValuesAsArray(in OctNode node, out NativeList<OctValue> results, Allocator allocator = Allocator.Temp)
         {
             results = new NativeList<OctValue>(Settings.MaxValuesPerNode, allocator);
