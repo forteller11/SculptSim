@@ -186,10 +186,13 @@ namespace SpatialPartitioning
             }
             else
             {
-                GetValuesAsArray(in node, out var values);
-                for (int i = 0; i < values.Length; i++)
-                    results.Add(values[i].Position);
-                values.Dispose();
+                IndexToOctValue currentValueIndex = node.FirstValue;
+                while (currentValueIndex.HasValue())
+                {
+                    var currentElement = currentValueIndex.GetElement(Values); 
+                    currentValueIndex = currentElement.NextValue;
+                    results.Add(currentElement.Position);
+                }
             }
         }
         

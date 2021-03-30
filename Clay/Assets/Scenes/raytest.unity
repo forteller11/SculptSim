@@ -475,8 +475,8 @@ MonoBehaviour:
   _radiusToSpawnIn: 1
   _octSettings:
     MaxValuesPerNode: 16
-    MinHalfSize: 0.1
-  _octreeRadiusMultiplier: 2
+    MinHalfSize: 0.3
+  _octreeRadiusMultiplier: 3
   _minRadius: 0.2
   _maxRadius: 0.3
   _desiredPercentBetweenMinMax: 0.8

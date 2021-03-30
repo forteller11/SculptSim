@@ -67,12 +67,6 @@ namespace SpatialPartitioning
             return results;
         }
         
-        public OctNode GetChildFromPoint(NativeList<OctNode> nodes, Vector3 point)
-        {
-            var octant = OctantAtPosition(point);
-            var child = GetChildNodeFromOctant(octant);
-            return child.GetElement(nodes);
-        }
 
         /// <returns> returns number between 0-7 which represents what octant
         /// the largest bit represents x, middle represents y, smallest bit z</returns>
