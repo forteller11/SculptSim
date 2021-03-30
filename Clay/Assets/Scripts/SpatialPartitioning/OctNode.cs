@@ -53,17 +53,20 @@ namespace SpatialPartitioning
             Child___ = IndexToOctNode.Empty();
         }
 
-        //todo turn into array/native... block allocate children all 8 at once, store other children implicitely
-        public void ForEachChild(NativeList<OctNode> nodes, Action<OctNode> action)
+        public readonly NativeList<OctNode> GetChildren(NativeList<OctNode> nodes)
         {
-            if (Child___.HasValue() ) action.Invoke(Child___.GetElement(nodes) );
-            if (ChildX__.HasValue() ) action.Invoke(ChildX__.GetElement(nodes) );
-            if (Child_Y_.HasValue() ) action.Invoke(Child_Y_.GetElement(nodes) );
-            if (Child__Z.HasValue() ) action.Invoke(Child__Z.GetElement(nodes) );
-            if (ChildXY_.HasValue() ) action.Invoke(ChildXY_.GetElement(nodes) );
-            if (ChildX_Z.HasValue() ) action.Invoke(ChildX_Z.GetElement(nodes) );
-            if (Child_YZ.HasValue() ) action.Invoke(Child_YZ.GetElement(nodes) );
-            if (ChildXYZ.HasValue() ) action.Invoke(ChildXYZ.GetElement(nodes) );
+            NativeList<OctNode> results = new NativeList<OctNode>(8, Allocator.Temp);
+            
+            if (Child___.HasValue() ) results.Add(Child___.GetElement(nodes) );
+            if (ChildX__.HasValue() ) results.Add(ChildX__.GetElement(nodes) );
+            if (Child_Y_.HasValue() ) results.Add(Child_Y_.GetElement(nodes) );
+            if (Child__Z.HasValue() ) results.Add(Child__Z.GetElement(nodes) );
+            if (ChildXY_.HasValue() ) results.Add(ChildXY_.GetElement(nodes) );
+            if (ChildX_Z.HasValue() ) results.Add(ChildX_Z.GetElement(nodes) );
+            if (Child_YZ.HasValue() ) results.Add(Child_YZ.GetElement(nodes) );
+            if (ChildXYZ.HasValue() ) results.Add(ChildXYZ.GetElement(nodes) );
+            
+            return results;
         }
         
         public OctNode GetChildFromPoint(NativeList<OctNode> nodes, Vector3 point)

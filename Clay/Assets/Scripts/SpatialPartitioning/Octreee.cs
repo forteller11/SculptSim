@@ -171,16 +171,18 @@ namespace SpatialPartitioning
             return results.Length > 0;
         }
 
-        void GetOverlappingChildrenOrAddToResultsDepthFirst(Sphere sphere, OctNode node, NativeList<Vector3> results)
+        void GetOverlappingChildrenOrAddToResultsDepthFirst(in Sphere sphere, in OctNode node, NativeList<Vector3> results)
         {
-            if (node.IsLeaf != 0)
+            if (node.IsLeaf == 0)
             {
                 //todo remove closure allocation...
-                node.ForEachChild(Nodes, (child) =>
+                var children = node.GetChildren(Nodes);
+                for (int i = 0; i < children.Length; i++)
                 {
+                    var child = children[i];
                     if (child.SphereOverlaps(sphere))
                         GetOverlappingChildrenOrAddToResultsDepthFirst(sphere, child, results);
-                });
+                }
             }
             else
             {
