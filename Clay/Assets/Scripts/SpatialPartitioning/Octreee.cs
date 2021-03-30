@@ -124,21 +124,41 @@ namespace SpatialPartitioning
                 //if it doesn't exist, create new child and set to appropriate octNode child member
                 if (!childNodeIndex.HasValue())
                 {
-                    #region create child node at octant
-                    var octantPosition = OctHelpers.OctantToVector3Int(octant);
-                    var quarterWidth = node.AABB.HalfWidth / 2;
-                    var childOffset = (Vector3) octantPosition * quarterWidth;
-                    var childPos = node.AABB.Center + childOffset;
-
-                    var childNode = new OctNode(new AABB(childPos, quarterWidth));
-                    childNodeIndex = IndexToOctNode.NewElement(Nodes, childNode);
-
-                    node.SetChildNodeIndexFromOctant(octant, childNodeIndex);
-                    #endregion
+                    CreateAllChildrenAndPersist(ref node);
+                    childNodeIndex = node.GetChildNodeFromOctant(octant);
                 }
+
+                if (!childNodeIndex.HasValue())
+                    throw new Exception("just created children it should have a value!");
 
                 InsertPointInNodeOrChildren(childNodeIndex, valueToInsert);
             }
+        }
+        
+        void CreateAllChildrenAndPersist(ref OctNode node)
+        {
+            //THE ORDER MATTERS
+            //as the order in the array implicit tells the program what octant the child is
+            CreateChildAtOctant(ref node, Octant.___);
+            CreateChildAtOctant(ref node, Octant.X__);
+            CreateChildAtOctant(ref node, Octant._Y_);
+            CreateChildAtOctant(ref node, Octant.__Z);
+            CreateChildAtOctant(ref node, Octant.XY_);
+            CreateChildAtOctant(ref node, Octant.X_Z);
+            CreateChildAtOctant(ref node, Octant._YZ);
+            CreateChildAtOctant(ref node, Octant.XYZ);
+        }
+        
+        void CreateChildAtOctant(ref OctNode node, Octant octant)
+        {
+            var octantPosition = OctHelpers.OctantToVector3Int(octant);
+            var quarterWidth = node.AABB.HalfWidth / 2;
+            var childOffset = (Vector3) octantPosition * quarterWidth;
+            var childPos = node.AABB.Center + childOffset;
+
+            var childNode = new OctNode(new AABB(childPos, quarterWidth));
+            
+            IndexToOctNode.NewElement(Nodes, childNode);
         }
 
         #region querying

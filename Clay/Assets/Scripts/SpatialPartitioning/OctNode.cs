@@ -25,14 +25,22 @@ namespace SpatialPartitioning
         public int IsLeaf; //used as a bool, but is an int so it is blittable and can be stored in a nativeList<T
 
         private int FirstChildIndex;
-        public IndexToOctNode ChildXYZ => new IndexToOctNode(ChildXYZ.Index + 0);
-        public IndexToOctNode Child_YZ => new IndexToOctNode(ChildXYZ.Index + 1);
-        public IndexToOctNode ChildX_Z => new IndexToOctNode(ChildXYZ.Index + 2);
-        public IndexToOctNode ChildXY_ => new IndexToOctNode(ChildXYZ.Index + 3);
-        public IndexToOctNode Child__Z => new IndexToOctNode(ChildXYZ.Index + 4);
-        public IndexToOctNode ChildX__ => new IndexToOctNode(ChildXYZ.Index + 5);
-        public IndexToOctNode Child_Y_ => new IndexToOctNode(ChildXYZ.Index + 6);
-        public IndexToOctNode Child___ => new IndexToOctNode(ChildXYZ.Index + 7);
+        
+        public IndexToOctNode Child___ => new IndexToOctNode(FirstChildIndex + 0);
+        public IndexToOctNode ChildX__ => new IndexToOctNode(FirstChildIndex + 1);
+        public IndexToOctNode Child_Y_ => new IndexToOctNode(FirstChildIndex + 2);
+        public IndexToOctNode Child__Z => new IndexToOctNode(FirstChildIndex + 3);
+        public IndexToOctNode ChildXY_ => new IndexToOctNode(FirstChildIndex + 4);
+        public IndexToOctNode ChildX_Z => new IndexToOctNode(FirstChildIndex + 5);
+        public IndexToOctNode Child_YZ => new IndexToOctNode(FirstChildIndex + 6);
+        public IndexToOctNode ChildXYZ => new IndexToOctNode(FirstChildIndex + 7);
+       
+        
+        
+        
+
+        
+        
         #endregion
         
         public OctNode(AABB aabb)
