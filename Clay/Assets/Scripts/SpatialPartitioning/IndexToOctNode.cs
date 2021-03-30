@@ -27,7 +27,7 @@ namespace SpatialPartitioning
 
         public readonly bool HasValue() => _index >= 0;
         
-        public OctNode GetElement(NativeList<OctNode> list) => list[_index];
+        public readonly OctNode GetElement(NativeList<OctNode> list) => list[_index];
 
         // public ref readonly OctNode GetElement(NativeList<OctNode> list)
         // {

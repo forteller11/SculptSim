@@ -24,14 +24,15 @@ namespace SpatialPartitioning
         public int ValueCount;
         public int IsLeaf; //used as a bool, but is an int so it is blittable and can be stored in a nativeList<T
 
-        public IndexToOctNode ChildXYZ;
-        public IndexToOctNode Child_YZ;
-        public IndexToOctNode ChildX_Z;
-        public IndexToOctNode ChildXY_;
-        public IndexToOctNode Child__Z;
-        public IndexToOctNode ChildX__;
-        public IndexToOctNode Child_Y_;
-        public IndexToOctNode Child___;
+        private int FirstChildIndex;
+        public IndexToOctNode ChildXYZ => new IndexToOctNode(ChildXYZ.Index + 0);
+        public IndexToOctNode Child_YZ => new IndexToOctNode(ChildXYZ.Index + 1);
+        public IndexToOctNode ChildX_Z => new IndexToOctNode(ChildXYZ.Index + 2);
+        public IndexToOctNode ChildXY_ => new IndexToOctNode(ChildXYZ.Index + 3);
+        public IndexToOctNode Child__Z => new IndexToOctNode(ChildXYZ.Index + 4);
+        public IndexToOctNode ChildX__ => new IndexToOctNode(ChildXYZ.Index + 5);
+        public IndexToOctNode Child_Y_ => new IndexToOctNode(ChildXYZ.Index + 6);
+        public IndexToOctNode Child___ => new IndexToOctNode(ChildXYZ.Index + 7);
         #endregion
         
         public OctNode(AABB aabb)
@@ -40,33 +41,16 @@ namespace SpatialPartitioning
 
             FirstValue = IndexToOctValue.Empty();
             LastValue  = IndexToOctValue.Empty();
-            
+
             ValueCount = 0;
             IsLeaf = 1;
 
-            ChildXYZ = IndexToOctNode.Empty();
-            Child_YZ = IndexToOctNode.Empty();
-            ChildX_Z = IndexToOctNode.Empty();
-            ChildXY_ = IndexToOctNode.Empty();
-            Child__Z = IndexToOctNode.Empty();
-            ChildX__ = IndexToOctNode.Empty();
-            Child_Y_ = IndexToOctNode.Empty();
-            Child___ = IndexToOctNode.Empty();
+            FirstChildIndex = int.MinValue;
         }
 
-        public readonly NativeList<OctNode> GetChildren(NativeList<OctNode> nodes)
+        public readonly NativeSlice<OctNode> GetChildren(NativeList<OctNode> nodes)
         {
-            NativeList<OctNode> results = new NativeList<OctNode>(8, Allocator.Temp);
-            
-            if (Child___.HasValue() ) results.Add(Child___.GetElement(nodes) );
-            if (ChildX__.HasValue() ) results.Add(ChildX__.GetElement(nodes) );
-            if (Child_Y_.HasValue() ) results.Add(Child_Y_.GetElement(nodes) );
-            if (Child__Z.HasValue() ) results.Add(Child__Z.GetElement(nodes) );
-            if (ChildXY_.HasValue() ) results.Add(ChildXY_.GetElement(nodes) );
-            if (ChildX_Z.HasValue() ) results.Add(ChildX_Z.GetElement(nodes) );
-            if (Child_YZ.HasValue() ) results.Add(Child_YZ.GetElement(nodes) );
-            if (ChildXYZ.HasValue() ) results.Add(ChildXYZ.GetElement(nodes) );
-            
+            NativeSlice<OctNode> results = new NativeSlice<OctNode>(nodes, ChildXYZ.Index, 8);
             return results;
         }
         
@@ -103,27 +87,7 @@ namespace SpatialPartitioning
                 default: throw new ArgumentException("octant must be between values 0 to 7!");
             }
         }
-        
-        ///<summary> Takes an octant and sets the corresponding child with the value</summary>
-        /// <Remarks>
-        /// Not persistant to array
-        /// </Remarks>
-        public void SetChildNodeIndexFromOctant(Octant octant, IndexToOctNode value)
-        {
-            switch (octant)
-            {
-                case Octant.XYZ: ChildXYZ = value; return;
-                case Octant._YZ: Child_YZ = value; return;
-                case Octant.X_Z: ChildX_Z = value; return;
-                case Octant.XY_: ChildXY_ = value; return;
-                case Octant.__Z: Child__Z = value; return;
-                case Octant.X__: ChildX__ = value; return;
-                case Octant._Y_: Child_Y_ = value; return;
-                case Octant.___: Child___ = value; return;
-                default: throw new ArgumentException("octant must be between values 0 to 7!");
-            }
-        }
-        
+
         public bool SphereOverlaps(Sphere sphere) => Intersection.SphereAABBOverlap(sphere, AABB);
         public bool PointOverlaps(Vector3 position) => Intersection.PointAABBOverlap(position, AABB);
         

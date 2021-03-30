@@ -1,4 +1,5 @@
-﻿using Unity.Collections;
+﻿using System;
+using Unity.Collections;
 
 namespace SpatialPartitioning
 {
@@ -15,10 +16,10 @@ namespace SpatialPartitioning
 
         public IndexToOctValue(int index) => _index = index;
         
-        public static IndexToOctValue Empty() => new IndexToOctValue(-1);
+        public static IndexToOctValue Empty() => new IndexToOctValue(-int.MaxValue);
         public static IndexToOctValue NewElement(NativeList<OctValue> list, OctValue value)
         {
-            var index = new IndexToOctValue(-1);
+            var index = new IndexToOctValue(-int.MaxValue);
             index.AddElement(list, value);
             return index;
         }
