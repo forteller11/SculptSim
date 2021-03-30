@@ -16,8 +16,7 @@ namespace SpatialPartitioning
     public struct OctNode
     {
         #region members
-        public OctSettings Settings;
-        
+
         public AABB AABB;
         
         public IndexToOctValue FirstValue;
@@ -34,10 +33,9 @@ namespace SpatialPartitioning
         public IndexToOctNode Child___;
         #endregion
         
-        public OctNode(OctSettings settings, AABB aabb)
+        public OctNode(AABB aabb)
         {
             AABB = aabb;
-            Settings = settings;
 
             FirstValue = IndexToOctValue.Empty();
             ValueCount = 0;

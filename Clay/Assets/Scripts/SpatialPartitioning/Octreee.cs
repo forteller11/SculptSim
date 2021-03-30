@@ -25,7 +25,7 @@ namespace SpatialPartitioning
         {
             Nodes.Clear();
             Values.Clear();
-            Nodes.Add(new OctNode(Settings, aabb));
+            Nodes.Add(new OctNode(aabb));
         }
 
         public void Insert(Vector3 point)
@@ -128,7 +128,7 @@ namespace SpatialPartitioning
                     var childOffset = (Vector3) octantPosition * quarterWidth;
                     var childPos = node.AABB.Center + childOffset;
 
-                    var childNode = new OctNode(Settings, new AABB(childPos, quarterWidth));
+                    var childNode = new OctNode(new AABB(childPos, quarterWidth));
                     childNodeIndex = IndexToOctNode.NewElement(Nodes, childNode);
 
                     node.SetChildNodeIndexFromOctant(octant, childNodeIndex);
