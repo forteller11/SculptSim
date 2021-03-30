@@ -20,6 +20,7 @@ namespace SpatialPartitioning
         public AABB AABB;
         
         public IndexToOctValue FirstValue;
+        public IndexToOctValue LastValue;
         public int ValueCount;
         public int IsLeaf; //used as a bool, but is an int so it is blittable and can be stored in a nativeList<T
 
@@ -38,6 +39,8 @@ namespace SpatialPartitioning
             AABB = aabb;
 
             FirstValue = IndexToOctValue.Empty();
+            LastValue  = IndexToOctValue.Empty();
+            
             ValueCount = 0;
             IsLeaf = 1;
 

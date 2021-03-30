@@ -19,6 +19,7 @@ namespace SpatialPartitioning
             Nodes = new NativeList<OctNode>(128, Allocator.Persistent);
             Values = new NativeList<OctValue>(1024, Allocator.Persistent);
             Settings = settings;
+            
         }
 
         public void CleanAndPrepareForInsertion(AABB aabb)
@@ -45,7 +46,7 @@ namespace SpatialPartitioning
         }
 
         
-        private void InsertPointInNodeOrChildren(IndexToOctNode nodeIndex, IndexToOctValue valueIndex)
+        private void InsertPointInNodeOrChildren(IndexToOctNode nodeIndex, IndexToOctValue valueToInsertIndex)
         {
             var node = nodeIndex.GetElement(Nodes);
 
@@ -56,19 +57,20 @@ namespace SpatialPartitioning
                 //if no values currently in node
                 if (!node.FirstValue.HasValue())
                 {
-                    node.FirstValue = valueIndex;
+                    node.FirstValue = valueToInsertIndex;
+                    node.LastValue  = valueToInsertIndex;
                 }
                 
                 //otherwise find last element and link to new element
                 else
                 {
-                    var lastValueIndex = GetTail(node.FirstValue);
+                    var lastValueIndex = node.LastValue;
                     
                     var lastValue = lastValueIndex.GetElement(Values);
-                    lastValue.NextValue = valueIndex;
-                    
+                    lastValue.NextValue = valueToInsertIndex; //connect previous last value to insert
                     lastValueIndex.SetElement(Values, lastValue); //persist last element.NextValue changes to global array
                     
+                    node.LastValue = valueToInsertIndex; //set last value to new inserted value
                 }
 
                 node.ValueCount++;
@@ -107,7 +109,7 @@ namespace SpatialPartitioning
 
             else
             {
-                InsertValueInChildren(valueIndex);
+                InsertValueInChildren(valueToInsertIndex);
             }
 
             //persist state of node index by copying it to global array
@@ -139,28 +141,6 @@ namespace SpatialPartitioning
             }
         }
 
-        public IndexToOctValue GetTail(IndexToOctValue octValueIndex)
-        {
-            IndexToOctValue currentValue = octValueIndex;
-            IndexToOctValue previousValue = IndexToOctValue.Empty();
-
-            int upperLimit = 0;
-            while (currentValue.HasValue())
-            {
-                previousValue = currentValue;
-                currentValue  = currentValue.GetElement(Values).NextValue;
-
-                upperLimit++;
-                if (upperLimit > Values.Length)
-                    throw new Exception("Ifinite loop!");
-            }    
-
-            if (!previousValue.HasValue())
-                throw new Exception("Cant call last value if there isn't a first value!");
-            
-            return previousValue;
-        }
-
         #region querying
         public bool QueryNonAlloc(Sphere sphere, NativeList<Vector3> results)
         {
@@ -175,13 +155,12 @@ namespace SpatialPartitioning
         {
             if (node.IsLeaf == 0)
             {
-                //todo remove closure allocation...
                 var children = node.GetChildren(Nodes);
                 for (int i = 0; i < children.Length; i++)
                 {
                     var child = children[i];
                     if (child.SphereOverlaps(sphere))
-                        GetOverlappingChildrenOrAddToResultsDepthFirst(sphere, child, results);
+                        GetOverlappingChildrenOrAddToResultsDepthFirst(in sphere, in child, results);
                 }
             }
             else

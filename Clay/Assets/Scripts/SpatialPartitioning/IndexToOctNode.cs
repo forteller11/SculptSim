@@ -1,4 +1,5 @@
 ﻿using Unity.Collections;
+using UnityEditor.Build;
 
 namespace SpatialPartitioning
 {
@@ -27,6 +28,14 @@ namespace SpatialPartitioning
         public readonly bool HasValue() => _index >= 0;
         
         public OctNode GetElement(NativeList<OctNode> list) => list[_index];
+
+        // public ref readonly OctNode GetElement(NativeList<OctNode> list)
+        // {
+        //     NativeSlice<OctNode> slice = new NativeSlice<OctNode>(list, _index, 1);
+        //     slice
+        //     slice.
+        //     list[_index]
+        // };
 
         public void SetElement(NativeList<OctNode> list, OctNode value) => list[_index] = value;
         
