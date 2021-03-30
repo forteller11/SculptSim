@@ -1,9 +1,7 @@
 ﻿
 using System;
-using System.Collections.Generic;
 using Collision;
 using Unity.Collections;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 namespace SpatialPartitioning
@@ -16,7 +14,7 @@ namespace SpatialPartitioning
 
         public Octree(OctSettings settings)
         {
-            Nodes = new NativeList<OctNode>(128, Allocator.Persistent);
+            Nodes = new NativeList<OctNode>(200, Allocator.Persistent);
             Values = new NativeList<OctValue>(1024, Allocator.Persistent);
             Settings = settings;
             
@@ -50,7 +48,8 @@ namespace SpatialPartitioning
         {
             var node = nodeIndex.GetElement(Nodes);
 
-            if (node.IsLeaf != 0)
+            //if node is a leaf
+            if (node.ValueCount >= 0)
             {
                 #region insert into self
 
@@ -101,12 +100,12 @@ namespace SpatialPartitioning
 
                     //this node is no longer a leaf, revoke ownership of values
                     node.FirstValue = IndexToOctValue.Empty();
-                    node.IsLeaf = 0; //todo: remove use of IsLeaf by just using if (valueCount > SpecialReallyBigNumber)
-                    node.ValueCount = 0;
+                    node.ValueCount = -1; //makes node non-insertable (a leaf)
                     #endregion
                 }
             }
 
+            //if node is not a leaf
             else
             {
                 InsertValueInChildren(valueToInsertIndex);
@@ -172,7 +171,8 @@ namespace SpatialPartitioning
 
         void GetOverlappingChildrenOrAddToResultsDepthFirst(in Sphere sphere, in OctNode node, NativeList<Vector3> results)
         {
-            if (node.IsLeaf == 0)
+            //if a parent, recursively call function on children
+            if (node.ValueCount < 0)
             {
                 var children = node.GetChildren(Nodes);
                 for (int i = 0; i < children.Length; i++)
@@ -182,6 +182,7 @@ namespace SpatialPartitioning
                         GetOverlappingChildrenOrAddToResultsDepthFirst(in sphere, in child, results);
                 }
             }
+            //otherwise get values and add to results
             else
             {
                 IndexToOctValue currentValueIndex = node.FirstValue;

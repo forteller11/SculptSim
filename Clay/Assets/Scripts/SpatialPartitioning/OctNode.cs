@@ -19,11 +19,10 @@ namespace SpatialPartitioning
 
         public AABB AABB;
         
-        public IndexToOctValue FirstValue;
+        public IndexToOctValue FirstValue; //todo only save lastValue and reverse linked list
         public IndexToOctValue LastValue;
-        public int ValueCount;
-        public int IsLeaf; //used as a bool, but is an int so it is blittable and can be stored in a nativeList<T
-        
+        public int ValueCount; //a count of < 0 means the node is a leaf and is not to be added
+
         public int FirstChildIndex;
         
         public IndexToOctNode Child___ => new IndexToOctNode(FirstChildIndex + 0);
@@ -46,7 +45,6 @@ namespace SpatialPartitioning
             LastValue  = IndexToOctValue.Empty();
 
             ValueCount = 0;
-            IsLeaf = 1;
 
             FirstChildIndex = int.MinValue;
         }
