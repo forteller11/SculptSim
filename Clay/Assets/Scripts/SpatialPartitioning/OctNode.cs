@@ -23,8 +23,8 @@ namespace SpatialPartitioning
         public IndexToOctValue LastValue;
         public int ValueCount;
         public int IsLeaf; //used as a bool, but is an int so it is blittable and can be stored in a nativeList<T
-
-        private int FirstChildIndex;
+        
+        public int FirstChildIndex;
         
         public IndexToOctNode Child___ => new IndexToOctNode(FirstChildIndex + 0);
         public IndexToOctNode ChildX__ => new IndexToOctNode(FirstChildIndex + 1);
@@ -34,14 +34,9 @@ namespace SpatialPartitioning
         public IndexToOctNode ChildX_Z => new IndexToOctNode(FirstChildIndex + 5);
         public IndexToOctNode Child_YZ => new IndexToOctNode(FirstChildIndex + 6);
         public IndexToOctNode ChildXYZ => new IndexToOctNode(FirstChildIndex + 7);
-       
-        
-        
-        
-
-        
-        
         #endregion
+
+       
         
         public OctNode(AABB aabb)
         {
@@ -55,10 +50,12 @@ namespace SpatialPartitioning
 
             FirstChildIndex = int.MinValue;
         }
+        
+        public bool HasChildren() => FirstChildIndex >= 0;
 
         public readonly NativeSlice<OctNode> GetChildren(NativeList<OctNode> nodes)
         {
-            NativeSlice<OctNode> results = new NativeSlice<OctNode>(nodes, ChildXYZ.Index, 8);
+            NativeSlice<OctNode> results = new NativeSlice<OctNode>(nodes, FirstChildIndex, 8);
             return results;
         }
         

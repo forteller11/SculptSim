@@ -118,18 +118,13 @@ namespace SpatialPartitioning
             // <remarks> creates new children as necessary</remarks>
             void InsertValueInChildren(IndexToOctValue valueToInsert)
             {
-                var octant = node.OctantAtPosition(valueToInsert.GetElement(Values).Position);
-                var childNodeIndex = node.GetChildNodeFromOctant(octant);
-            
-                //if it doesn't exist, create new child and set to appropriate octNode child member
-                if (!childNodeIndex.HasValue())
+                if (!node.HasChildren())
                 {
                     CreateAllChildrenAndPersist(ref node);
-                    childNodeIndex = node.GetChildNodeFromOctant(octant);
                 }
-
-                if (!childNodeIndex.HasValue())
-                    throw new Exception("just created children it should have a value!");
+                
+                var octant = node.OctantAtPosition(valueToInsert.GetElement(Values).Position);
+                var childNodeIndex = node.GetChildNodeFromOctant(octant);
 
                 InsertPointInNodeOrChildren(childNodeIndex, valueToInsert);
             }
@@ -139,17 +134,21 @@ namespace SpatialPartitioning
         {
             //THE ORDER MATTERS
             //as the order in the array implicit tells the program what octant the child is
-            CreateChildAtOctant(ref node, Octant.___);
-            CreateChildAtOctant(ref node, Octant.X__);
-            CreateChildAtOctant(ref node, Octant._Y_);
-            CreateChildAtOctant(ref node, Octant.__Z);
-            CreateChildAtOctant(ref node, Octant.XY_);
-            CreateChildAtOctant(ref node, Octant.X_Z);
-            CreateChildAtOctant(ref node, Octant._YZ);
-            CreateChildAtOctant(ref node, Octant.XYZ);
+            
+            //todo set first child to appropriate index here
+            //todo remove indextooctnode, is confusing now
+            node.FirstChildIndex = Nodes.Length;
+            CreateChildAtOctant(in node, Octant.___);
+            CreateChildAtOctant(in node, Octant.X__);
+            CreateChildAtOctant(in node, Octant._Y_);
+            CreateChildAtOctant(in node, Octant.__Z);
+            CreateChildAtOctant(in node, Octant.XY_);
+            CreateChildAtOctant(in node, Octant.X_Z);
+            CreateChildAtOctant(in node, Octant._YZ);
+            CreateChildAtOctant(in node, Octant.XYZ);
         }
         
-        void CreateChildAtOctant(ref OctNode node, Octant octant)
+        void CreateChildAtOctant(in OctNode node, Octant octant)
         {
             var octantPosition = OctHelpers.OctantToVector3Int(octant);
             var quarterWidth = node.AABB.HalfWidth / 2;
@@ -158,7 +157,7 @@ namespace SpatialPartitioning
 
             var childNode = new OctNode(new AABB(childPos, quarterWidth));
             
-            IndexToOctNode.NewElement(Nodes, childNode);
+            Nodes.Add(childNode);
         }
 
         #region querying
