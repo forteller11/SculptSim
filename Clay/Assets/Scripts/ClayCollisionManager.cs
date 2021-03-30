@@ -204,7 +204,7 @@ namespace ClaySimulation
                     var color = Common.RandomColor(ref ran);
                     Gizmos.color = color;
                     
-                    Gizmos.DrawWireCube(nodes[i].AABB.Center, new Vector3(width, width, width));
+                    // Gizmos.DrawWireCube(nodes[i].AABB.Center, new Vector3(width, width, width));
                     float offset = 0.995f;
                     Gizmos.DrawWireCube(nodes[i].AABB.Center, new Vector3(width, width, width) * offset);
 

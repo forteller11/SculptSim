@@ -82,19 +82,19 @@ namespace SpatialPartitioning
                     theoreticalChildHalfWidth > Settings.MinHalfSize)
                 {
                     #region redistributie values into children if max values exceeded and can still subdivide
-                    IndexToOctValue currentValueIndex = node.FirstValue;
-                    while (currentValueIndex.HasValue())
+                    IndexToOctValue currentRedistributeValueIndex = node.FirstValue;
+                    while (currentRedistributeValueIndex.HasValue())
                     {
-                        var currentValue = currentValueIndex.GetElement(Values);
-                        var nextValueIndexCache = currentValue.NextValue;
+                        var currentRedistributeValue = currentRedistributeValueIndex.GetElement(Values);
+                        var nextRedistributeValueCache = currentRedistributeValue.NextValue;
 
                         //break up linked list (child will reconstruct it appropriately)
-                        currentValue.NextValue = IndexToOctValue.Empty();
-                        currentValueIndex.SetElement(Values, currentValue);
+                        currentRedistributeValue.NextValue = IndexToOctValue.Empty();
+                        currentRedistributeValueIndex.SetElement(Values, currentRedistributeValue);
                         
-                        InsertValueInChildren();
+                        InsertValueInChildren(currentRedistributeValueIndex);
 
-                        currentValueIndex = nextValueIndexCache;
+                        currentRedistributeValueIndex = nextRedistributeValueCache;
                     }
 
                     //this node is no longer a leaf, revoke ownership of values
@@ -107,16 +107,16 @@ namespace SpatialPartitioning
 
             else
             {
-                InsertValueInChildren();
+                InsertValueInChildren(valueIndex);
             }
 
             //persist state of node index by copying it to global array
             nodeIndex.SetElement(Nodes, node);
 
             // <remarks> creates new children as necessary</remarks>
-            void InsertValueInChildren()
+            void InsertValueInChildren(IndexToOctValue valueToInsert)
             {
-                var octant = node.OctantAtPosition(valueIndex.GetElement(Values).Position);
+                var octant = node.OctantAtPosition(valueToInsert.GetElement(Values).Position);
                 var childNodeIndex = node.GetChildNodeFromOctant(octant);
             
                 //if it doesn't exist, create new child and set to appropriate octNode child member
@@ -135,7 +135,7 @@ namespace SpatialPartitioning
                     #endregion
                 }
 
-                InsertPointInNodeOrChildren(childNodeIndex, valueIndex);
+                InsertPointInNodeOrChildren(childNodeIndex, valueToInsert);
             }
         }
 
@@ -143,12 +143,17 @@ namespace SpatialPartitioning
         {
             IndexToOctValue currentValue = octValueIndex;
             IndexToOctValue previousValue = IndexToOctValue.Empty();
-            
+
+            int upperLimit = 0;
             while (currentValue.HasValue())
             {
                 previousValue = currentValue;
                 currentValue  = currentValue.GetElement(Values).NextValue;
-            }
+
+                upperLimit++;
+                if (upperLimit > Values.Length)
+                    throw new Exception("Ifinite loop!");
+            }    
 
             if (!previousValue.HasValue())
                 throw new Exception("Cant call last value if there isn't a first value!");
