@@ -168,7 +168,88 @@ namespace SpatialPartitioning
 
         #endregion
         
-        #region querying
+        #region querying by dist
+        public int QueryFiniteByDistNonAlloc(Sphere sphere, NativeArray<Vector3> resultPositions, NativeArray<float> resultDistancesSqred)
+        {
+            //todo this doesn't work if resulting query gets less than results.Length as the positive infinity values will be removed at the end
+            // [val, inf, inf, inf, val, val]
+            //redo algo so it stops at bottom inf values first, not tails first
+            
+            if (resultPositions.Length != resultDistancesSqred.Length)
+                throw new ArgumentException("arrays must be of same len");
+            
+            var root = Nodes[0];
+            int resultsCount = 0;
+            
+            float maxDist = float.MaxValue;
+            int maxDistIndex = 0;
+            
+            for (int i = 0; i < resultPositions.Length; i++)
+            {
+                resultPositions[i] = Vector3.positiveInfinity;
+                resultDistancesSqred[i] = float.PositiveInfinity;
+            }
+
+            if (root.SphereOverlaps(sphere))
+                GetOverlappingChildrenOrAddToResultsDepthFirstIfSmallerThanMaxValue(root);
+            
+            return resultsCount;
+            
+            
+            void GetOverlappingChildrenOrAddToResultsDepthFirstIfSmallerThanMaxValue(in OctNode node)
+            {
+                //if a parent, recursively call function on children
+                if (node.ValueCount < 0)
+                {
+                    var children = node.GetChildren(Nodes);
+                    for (int i = 0; i < children.Length; i++)
+                    {
+                        var child = children[i];
+                        if (child.SphereOverlaps(sphere))
+                            GetOverlappingChildrenOrAddToResultsDepthFirst(in sphere, in child, resultPositions, ref resultsCount);
+                    }
+                }
+                //otherwise get values and add to results
+                else
+                {
+                    IndexToOctValue currentValueIndex = node.LastValue;
+                    while (currentValueIndex.HasValue())
+                    {
+                        var currentElement = currentValueIndex.GetElement(Values);
+                        currentValueIndex = currentElement.PreviousValue;
+
+                        //if current value less than current max, replace those values
+                        float distSqred = Vector3.SqrMagnitude(currentElement.Position - sphere.Position);
+                        if (distSqred < maxDist)
+                        {
+                           
+                            resultPositions[maxDistIndex] = currentElement.Position;
+                            resultDistancesSqred[maxDistIndex] = distSqred;
+                            resultsCount++;
+                            
+                            //get new max dist
+                            maxDist = float.NegativeInfinity;
+                            maxDistIndex = -1;
+                            
+                            for (int i = 0; i < resultPositions.Length; i++)
+                            {
+                                if (resultDistancesSqred[i] > maxDist)
+                                {
+                                    maxDist = resultDistancesSqred[i];
+                                    maxDistIndex = i;
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        
+        #endregion
+        
+        #region querying normal
         public int QueryNonAlloc(Sphere sphere, NativeArray<Vector3> results)
         {
             var root = Nodes[0];

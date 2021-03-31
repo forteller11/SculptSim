@@ -34,8 +34,10 @@ namespace ClaySimulation
         [ShowInInspector] private List<Clay> _particles;
         [ShowInInspector] private List<Vector3> _particlesToMove;
         [ShowInInspector] private List<Vector4> _particlePositions;
-        [ShowInInspector] private NativeArray<Vector3> _queryResults;
         [ShowInInspector] private Material _material;
+        
+        private NativeArray<Vector3> _queryPositions;
+        private NativeArray<float> _queryDistancesSqred;
         
         private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
         private static readonly int PARTICLES_UNIFORM = Shader.PropertyToID("_Particles");
@@ -69,7 +71,8 @@ namespace ClaySimulation
             
             #region octree
             Octree = new Octree(_octSettings, _spawnOnStart);
-            _queryResults = new NativeArray<Vector3>(_spawnOnStart, Allocator.Persistent);
+            _queryPositions = new NativeArray<Vector3>(5, Allocator.Persistent);
+            _queryDistancesSqred = new NativeArray<float>(5, Allocator.Persistent);
             #endregion
         }
 
@@ -100,11 +103,11 @@ namespace ClaySimulation
 
                 var querySphere = new Sphere(p1Pos, _maxRadius);
                 
-                int queryResultCount = Octree.QueryNonAlloc(querySphere, _queryResults);
+                int queryResultCount = Octree.QueryFiniteByDistNonAlloc(querySphere, _queryPositions, _queryDistancesSqred);
                     
                 for (int j = 0; j < queryResultCount; j++)
                 {
-                    var p2Pos = _queryResults[j];
+                    var p2Pos = _queryPositions[j];
 
                     if (p2Pos == p1Pos) continue; //if the same particle
                     
@@ -173,7 +176,8 @@ namespace ClaySimulation
         private void OnDestroy()
         {
             Octree.Dispose();
-            _queryResults.Dispose();
+            _queryPositions.Dispose();
+            _queryDistancesSqred.Dispose();
         }
 
         private void OnDrawGizmosSelected()
