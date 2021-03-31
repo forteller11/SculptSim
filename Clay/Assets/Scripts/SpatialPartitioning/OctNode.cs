@@ -51,7 +51,7 @@ namespace SpatialPartitioning
         
         public bool HasChildren() => FirstChildIndex >= 0;
 
-        public readonly NativeSlice<OctNode> GetChildren(NativeList<OctNode> nodes)
+        public readonly NativeSlice<OctNode> GetChildren(NativeArray<OctNode> nodes)
         {
             NativeSlice<OctNode> results = new NativeSlice<OctNode>(nodes, FirstChildIndex, 8);
             return results;

@@ -16,9 +16,12 @@ namespace SpatialPartitioning
 
         public IndexToOctNode(int index) => _index = index;
 
-        public readonly OctNode GetElement(NativeList<OctNode> list) => list[_index];
+        public readonly OctNode GetElement(NativeArray<OctNode> list) => list[_index];
 
-        public void SetElement(NativeList<OctNode> list, OctNode value) => list[_index] = value;
+        public void SetElement(NativeArray<OctNode> list, OctNode value)
+        {
+            list[_index] = value;
+        }
 
         public override string ToString() => _index.ToString();
 

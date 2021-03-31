@@ -8,13 +8,15 @@ namespace SpatialPartitioning
 {
     public class Octree : IDisposable
     {
-        public NativeList<OctNode> Nodes;
+        public NativeArray<OctNode> Nodes;
+        public int NodesLength;
+        
         public NativeList<OctValue> Values;
         public OctSettings Settings;
 
         public Octree(OctSettings settings)
         {
-            Nodes = new NativeList<OctNode>(200, Allocator.Persistent);
+            Nodes = new NativeArray<OctNode>(600, Allocator.Persistent);
             Values = new NativeList<OctValue>(1024, Allocator.Persistent);
             Settings = settings;
             
@@ -23,9 +25,10 @@ namespace SpatialPartitioning
         #region construction
         public void CleanAndPrepareForInsertion(AABB aabb)
         {
-            Nodes.Clear();
+            NodesLength = 1;
             Values.Clear();
-            Nodes.Add(new OctNode(aabb));
+            
+            Nodes[0] = new OctNode(aabb);
         }
 
         public void Insert(Vector3 point)
@@ -137,7 +140,7 @@ namespace SpatialPartitioning
             
             //todo set first child to appropriate index here
             //todo remove indextooctnode, is confusing now
-            node.FirstChildIndex = Nodes.Length;
+            node.FirstChildIndex = NodesLength;
             CreateChildAtOctant(in node, Octant.___);
             CreateChildAtOctant(in node, Octant.X__);
             CreateChildAtOctant(in node, Octant._Y_);
@@ -157,7 +160,8 @@ namespace SpatialPartitioning
 
             var childNode = new OctNode(new AABB(childPos, quarterWidth));
             
-            Nodes.Add(childNode);
+            Nodes[NodesLength] = childNode;
+            NodesLength++;
         }
 
         #endregion
