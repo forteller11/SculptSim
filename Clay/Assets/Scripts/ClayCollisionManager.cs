@@ -34,7 +34,7 @@ namespace ClaySimulation
         [ShowInInspector] private List<Clay> _particles;
         [ShowInInspector] private List<Vector3> _particlesToMove;
         [ShowInInspector] private List<Vector4> _particlePositions;
-        [ShowInInspector] private NativeList<Vector3> _queryResults;
+        [ShowInInspector] private NativeArray<Vector3> _queryResults;
         [ShowInInspector] private Material _material;
         
         private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
@@ -69,7 +69,7 @@ namespace ClaySimulation
             
             #region octree
             Octree = new Octree(_octSettings);
-            _queryResults = new NativeList<Vector3>(128, Allocator.Persistent);
+            _queryResults = new NativeArray<Vector3>(_spawnOnStart, Allocator.Persistent);
             #endregion
         }
 
@@ -99,10 +99,10 @@ namespace ClaySimulation
                 var p1Pos = _particles[i].transform.position;
 
                 var querySphere = new Sphere(p1Pos, _maxRadius);
-                _queryResults.Clear();
-                Octree.QueryNonAlloc(querySphere, _queryResults);
+                
+                int queryResultCount = Octree.QueryNonAlloc(querySphere, _queryResults);
                     
-                for (int j = 0; j < _queryResults.Length; j++)
+                for (int j = 0; j < queryResultCount; j++)
                 {
                     var p2Pos = _queryResults[j];
 

@@ -16,10 +16,10 @@ namespace SpatialPartitioning
 
         public IndexToOctValue(int index) => _index = index;
         
-        public static IndexToOctValue Empty() => new IndexToOctValue(-int.MaxValue);
+        public static IndexToOctValue Empty() => new IndexToOctValue(int.MinValue);
         public static IndexToOctValue NewElement(NativeList<OctValue> list, OctValue value)
         {
-            var index = new IndexToOctValue(-int.MaxValue);
+            var index = new IndexToOctValue(int.MinValue);
             index.AddElement(list, value);
             return index;
         }

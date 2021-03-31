@@ -20,6 +20,7 @@ namespace SpatialPartitioning
             
         }
 
+        #region construction
         public void CleanAndPrepareForInsertion(AABB aabb)
         {
             Nodes.Clear();
@@ -159,17 +160,22 @@ namespace SpatialPartitioning
             Nodes.Add(childNode);
         }
 
+        #endregion
+        
         #region querying
-        public bool QueryNonAlloc(Sphere sphere, NativeList<Vector3> results)
+        public int QueryNonAlloc(Sphere sphere, NativeArray<Vector3> results)
         {
             var root = Nodes[0];
+            int resultsCount = 0;
+            
             if (root.SphereOverlaps(sphere))
-                GetOverlappingChildrenOrAddToResultsDepthFirst(sphere, root, results);
+                GetOverlappingChildrenOrAddToResultsDepthFirst(sphere, root, results, ref resultsCount);
         
-            return results.Length > 0;
+            // Debug.Log(resultsCount);
+            return resultsCount;
         }
 
-        void GetOverlappingChildrenOrAddToResultsDepthFirst(in Sphere sphere, in OctNode node, NativeList<Vector3> results)
+        void GetOverlappingChildrenOrAddToResultsDepthFirst(in Sphere sphere, in OctNode node, NativeArray<Vector3> results, ref int resultsCount)
         {
             //if a parent, recursively call function on children
             if (node.ValueCount < 0)
@@ -179,7 +185,7 @@ namespace SpatialPartitioning
                 {
                     var child = children[i];
                     if (child.SphereOverlaps(sphere))
-                        GetOverlappingChildrenOrAddToResultsDepthFirst(in sphere, in child, results);
+                        GetOverlappingChildrenOrAddToResultsDepthFirst(in sphere, in child, results, ref resultsCount);
                 }
             }
             //otherwise get values and add to results
@@ -190,7 +196,8 @@ namespace SpatialPartitioning
                 {
                     var currentElement = currentValueIndex.GetElement(Values); 
                     currentValueIndex = currentElement.NextValue;
-                    results.Add(currentElement.Position);
+                    results[resultsCount] = currentElement.Position;
+                    resultsCount++;
                 }
             }
         }
