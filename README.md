@@ -4,24 +4,31 @@
 Simulate the physicallity of working with a malluable, dynamic material.
 Allow users to tear, indent, and mold the material using their hands as they would in real life.
 
+
 ---
+
 
 #### Current (technical) approach:
 Create a Lagrangian particle sim which simulates the physical properties of clay.
 Render the particles uniformly using a Ray Marching, smoothed signed distance field function. 
 (The effect would be each "clay" particle would be a sort of 3D metaball)
 
+
 ---
+
+
 #### Primary Technical Obstacles:
 - Performance
   - Simulating enough particles to create a adequetly high fidelity simulation.
   -  Rendering the particles to create a uniform surface that can also tear apart.
 - Creating a convincing clay particle sim
 
+
 ###### Current Solutions:
 - Data Oriented (struct and buffer based) spatial partition Algo --> Octree
 - DOTS Job System (for multi threading the algorithim)
 - Sending and using spatial partition algo shader-side in the raymarching algo (vertex buffer and/or texture indirection)
+
 
 ###### future improvements if not meeting perf requirments
 - compute shader > jobs multithreading
