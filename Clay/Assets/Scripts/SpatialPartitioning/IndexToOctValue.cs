@@ -3,7 +3,6 @@ using Unity.Collections;
 
 namespace SpatialPartitioning
 {
-    
     /* --------------------------
      * just a int under the hood
      * a way to hold an index to a **particular type** of array

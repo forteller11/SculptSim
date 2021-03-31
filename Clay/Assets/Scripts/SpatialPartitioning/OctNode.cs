@@ -12,6 +12,7 @@ namespace SpatialPartitioning
     /* ---------------------
      * parent nodes will never contain elements,
      * leaf nodes will always contain elements
+     * octnode will always contain zero or 8 children, contigously distributed after FirstChildIndex
      --------------------*/
     public struct OctNode
     {
@@ -19,7 +20,6 @@ namespace SpatialPartitioning
 
         public AABB AABB;
         
-        public IndexToOctValue FirstValue; //todo only save lastValue and reverse linked list
         public IndexToOctValue LastValue;
         public int ValueCount; //a count of < 0 means the node is a leaf and is not to be added
 
@@ -40,8 +40,7 @@ namespace SpatialPartitioning
         public OctNode(AABB aabb)
         {
             AABB = aabb;
-
-            FirstValue = IndexToOctValue.Empty();
+            
             LastValue  = IndexToOctValue.Empty();
 
             ValueCount = 0;

@@ -6,13 +6,13 @@ namespace SpatialPartitioning
     public struct OctValue
     {
         public Vector3 Position;
-        public IndexToOctValue NextValue;
+        public IndexToOctValue PreviousValue;
 
         public static OctValue CreateTail(Vector3 value)
         {
             var octValue = new OctValue();
             octValue.Position = value;
-            octValue.NextValue = IndexToOctValue.Empty();
+            octValue.PreviousValue = IndexToOctValue.Empty();
             return octValue;
         }
 
