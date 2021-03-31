@@ -68,7 +68,7 @@ namespace ClaySimulation
             #endregion
             
             #region octree
-            Octree = new Octree(_octSettings);
+            Octree = new Octree(_octSettings, _spawnOnStart);
             _queryResults = new NativeArray<Vector3>(_spawnOnStart, Allocator.Persistent);
             #endregion
         }

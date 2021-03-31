@@ -11,13 +11,16 @@ namespace SpatialPartitioning
         public NativeArray<OctNode> Nodes;
         public int NodesLength;
         
-        public NativeList<OctValue> Values;
+        public NativeArray<OctValue> Values;
+        public int ValuesLength;
+        
         public OctSettings Settings;
 
-        public Octree(OctSettings settings)
+        public Octree(OctSettings settings, int maxParticles)
         {
-            Nodes = new NativeArray<OctNode>(600, Allocator.Persistent);
-            Values = new NativeList<OctValue>(1024, Allocator.Persistent);
+            //todo make node default value change with settings.maxparticlesPerNode
+            Nodes  = new NativeArray<OctNode>(maxParticles/4, Allocator.Persistent);
+            Values = new NativeArray<OctValue>(maxParticles+1, Allocator.Persistent);
             Settings = settings;
             
         }
@@ -26,7 +29,7 @@ namespace SpatialPartitioning
         public void CleanAndPrepareForInsertion(AABB aabb)
         {
             NodesLength = 1;
-            Values.Clear();
+            ValuesLength = 1;
             
             Nodes[0] = new OctNode(aabb);
         }
@@ -37,7 +40,7 @@ namespace SpatialPartitioning
             var root = rootIndex.GetElement(Nodes);
             if (root.PointOverlaps(point))
             {
-                IndexToOctValue valueIndex = IndexToOctValue.NewElement(Values, OctValue.CreateTail(point));
+                IndexToOctValue valueIndex = IndexToOctValue.NewElement(Values, ref ValuesLength, OctValue.CreateTail(point));
                 InsertPointInNodeOrChildren(rootIndex, valueIndex);
             }
             else
