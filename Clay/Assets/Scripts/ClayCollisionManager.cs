@@ -240,7 +240,7 @@ namespace ClaySimulation
         {
             throw new NotImplementedException();
             
-            if (_particles != null && DrawParticles)
+            if (Application.isPlaying && DrawParticles)
             {
                 Random ran = Random.CreateFromIndex(0);
                 for (int i = 0; i < _particles.Count; i++)
@@ -255,7 +255,7 @@ namespace ClaySimulation
                 }
             }
 
-            if (Octree != null && DrawOctree)
+            if (Application.isPlaying && DrawOctree)
             {
                 Random ran = Random.CreateFromIndex(3759);
                 for (int i = 0; i < Octree.Nodes.Length; i++)
