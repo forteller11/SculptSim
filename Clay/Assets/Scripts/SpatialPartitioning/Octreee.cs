@@ -20,7 +20,7 @@ namespace SpatialPartitioning
 
         public Octree(OctSettings settings, int maxParticles)
         {
-            Nodes  = new NativeArray<OctNode>(maxParticles/4, Allocator.Persistent);
+            Nodes  = new NativeArray<OctNode>(maxParticles/2 + 40, Allocator.Persistent);
             Values = new NativeArray<OctValue>(maxParticles+1, Allocator.Persistent);
             Settings = settings;
             

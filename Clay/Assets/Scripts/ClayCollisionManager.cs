@@ -109,12 +109,12 @@ namespace ClaySimulation
 
                 var querySphere = new Sphere(p1Pos, _maxRadius);
 
-                var queryResults = Octree.QueryNonAlloc(querySphere, _queryBuffer);
-                // var queryResults = Octree.QueryNonAlloc(querySphere, _maxParticlesToSimulate);
+                //var queryResultsNumber = Octree.QueryNonAlloc(querySphere, _queryBuffer);
+                 var queryResults = QueryFiniteByMinDist(querySphere, _maxParticlesToSimulate);
                 
-                for (int j = 0; j < queryResults; j++)
+                for (int j = 0; j < queryResults.Length; j++)
                 {
-                    var p2Pos = _queryBuffer[j];
+                    var p2Pos = queryResults[j];
 
                     if (p2Pos == p1Pos) continue; //if the same particle
                     
@@ -210,7 +210,7 @@ namespace ClaySimulation
                     if (distSqr > currentMaxDistSqr)
                     {
                         currentMaxDistSqr = distSqr;
-                        currentMaxIndex = i;
+                        currentMaxIndex = finiteResults.Length - 1;
                     }
                 }
                 else
@@ -218,10 +218,14 @@ namespace ClaySimulation
                     //otherwise replace the current max index, only if the current query has a larger distSqrd
                     //then go through the finite buffers to find the new largest dist sqrd from the sphere
                     var distSqr = Vector3.SqrMagnitude(currentQuery - sphere.Position);
-                    if (distSqr > currentMaxDistSqr)
+                    if (distSqr < currentMaxDistSqr)
                     {
                         finiteResults[currentMaxIndex] = currentQuery;
                         finiteResultsDistSqr[currentMaxIndex] = distSqr;
+
+                        currentMaxDistSqr = float.MinValue;
+                        currentMaxIndex = -1;
+                        
                         for (int j = 0; j < finiteResults.Length; j++)
                         {
                             if (finiteResultsDistSqr[j] > currentMaxDistSqr)
