@@ -35,8 +35,6 @@ namespace SpatialPartitioning
         public IndexToOctNode ChildXYZ => new IndexToOctNode(FirstChildIndex + 7);
         #endregion
 
-       
-        
         public OctNode(AABB aabb)
         {
             AABB = aabb;
@@ -55,7 +53,6 @@ namespace SpatialPartitioning
             NativeSlice<OctNode> results = new NativeSlice<OctNode>(nodes, FirstChildIndex, 8);
             return results;
         }
-        
 
         /// <returns> returns number between 0-7 which represents what octant
         /// the largest bit represents x, middle represents y, smallest bit z</returns>
@@ -91,6 +88,7 @@ namespace SpatialPartitioning
         }
 
         public bool SphereOverlaps(Sphere sphere) => Intersection.SphereAABBOverlap(sphere, AABB);
+        
         public bool PointOverlaps(Vector3 position) => Intersection.PointAABBOverlap(position, AABB);
         
     }

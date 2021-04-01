@@ -13,7 +13,7 @@ namespace ClaySimulation
 {
     public class ClayCollisionManager : MonoBehaviour
     {
-        
+        #region members
         [FoldoutGroup("Spawn")] [SerializeField] [AssetsOnly] private Clay _particlePrefab;
         [FoldoutGroup("Spawn")] [SerializeField] private int _spawnOnStart = 10;
         [FoldoutGroup("Spawn")] [SerializeField] private float _radiusToSpawnIn = 5;
@@ -29,20 +29,22 @@ namespace ClaySimulation
         [Tooltip("x== 0 means at desired percent, -1 == at min, 1 == at max")] 
         [FoldoutGroup("Sim Settings")] [SerializeField] AnimationCurve _forceMultiplierCurve = new AnimationCurve(new Keyframe(-1, 1), new Keyframe(0, 0), new Keyframe(1, 1));
         
-        
         [FoldoutGroup("Debug")] public bool DrawParticles;
         [FoldoutGroup("Debug")] public bool DrawOctree;
         
-        [ShowInInspector] private List<Clay> _particles;
-        [ShowInInspector] private List<Vector3> _particlesToMove;
-        [ShowInInspector] private List<Vector4> _particlePositions;
-        [ShowInInspector] private Material _material;
-        
-        private NativeArray<Vector3> _queryBuffer;
-
         private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
         private static readonly int PARTICLES_UNIFORM = Shader.PropertyToID("_Particles");
-        [SerializeField] private Octree Octree;
+        
+  
+        private Material _material;
+        private Octree Octree;
+        
+        private List<Clay> _particles;
+        private List<Vector3> _particlesToMove;
+        private List<Vector4> _particlePositions;
+        private NativeArray<Vector3> _queryBuffer;
+
+        #endregion
 
         private void Awake()
         {
@@ -75,6 +77,12 @@ namespace ClaySimulation
             _queryBuffer = new NativeArray<Vector3>(_spawnOnStart, Allocator.Persistent);
             #endregion
         }
+        
+        private void OnDestroy()
+        {
+            Octree.Dispose();
+            _queryBuffer.Dispose();
+        }
 
         private void Update()
         {
@@ -100,7 +108,6 @@ namespace ClaySimulation
         
         void CalculateParticleForces()
         {
-            float avgNeighborCount = 0;
             float deltaTime = Time.deltaTime;
             
             #region collision and force calc
@@ -110,20 +117,12 @@ namespace ClaySimulation
 
                 var querySphere = new Sphere(p1Pos, _maxRadius);
 
-                //var queryResultsNumber = Octree.QueryNonAlloc(querySphere, _queryBuffer);
                 var queryResults = QueryFiniteByMinDist(querySphere, _maxParticlesToSimulate);
-                avgNeighborCount += queryResults.Length;
-                
+
                 for (int j = 0; j < queryResults.Length; j++)
                 {
                     var p2Pos = queryResults[j];
 
-                    // if (p2Pos == p1Pos)
-                    // {
-                    //     Debug.Log("same part in sim");
-                    //     continue;
-                    // } //if the same particle
-                    
                     Vector3 p1ToP2 = p2Pos - p1Pos;
                     float p1P2Dist = p1ToP2.magnitude;
                     Vector3 p1ToP2Dir = p1ToP2 / p1P2Dist;
@@ -151,45 +150,9 @@ namespace ClaySimulation
                 
             }
             #endregion
-
-            avgNeighborCount /= _spawnOnStart;
-            Debug.Log(avgNeighborCount);
-        }
-
-        void ApplyParticleForces()
-        {
-            #region move particles
-            for (int i = 0; i < _particles.Count; i++)
-            {
-                var pos = _particles[i].transform.position;
-                var newPos = pos + _particlesToMove[i];
-
-                _particles[i].RigidBody.MovePosition(newPos);
-                _particlesToMove[i] = Vector3.zero;
-            }
-            #endregion
-        }
-        
-        
-
-        private void SendParticlesToShader()
-        {
-            for (int i = 0; i < _particles.Count; i++)
-            {
-                var p = _particles[i].RigidBody.position;
-                _particlePositions[i] = new Vector4(p.x, p.y, p.z, 0);
-            }
             
-            _material.SetVectorArray(PARTICLES_UNIFORM, _particlePositions);
-            _material.SetInt(PARTICLES_LENGTH_UNIFORM, _particlePositions.Count);
         }
-
-        private void OnDestroy()
-        {
-            Octree.Dispose();
-            _queryBuffer.Dispose();
-        }
-
+        
         //Query for all points
         //then filter out to get the [maxQuery] closest points to the sphere
         NativeList<Vector3> QueryFiniteByMinDist(Sphere sphere, int maxQuery)
@@ -259,8 +222,24 @@ namespace ClaySimulation
             return finiteResults;
         }
 
+        void ApplyParticleForces()
+        {
+            #region move particles
+            for (int i = 0; i < _particles.Count; i++)
+            {
+                var pos = _particles[i].transform.position;
+                var newPos = pos + _particlesToMove[i];
+
+                _particles[i].RigidBody.MovePosition(newPos);
+                _particlesToMove[i] = Vector3.zero;
+            }
+            #endregion
+        }
+
         private void OnDrawGizmosSelected()
         {
+            throw new NotImplementedException();
+            
             if (_particles != null && DrawParticles)
             {
                 Random ran = Random.CreateFromIndex(0);
