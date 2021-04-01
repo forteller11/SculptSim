@@ -9,215 +9,49 @@ using UnityEngine;
 
 namespace SpatialPartitioning
 {
-
-    /* -------------
-        where XYZ == plus in those axis, and _ means minus in those axis
-          > so XYZ is right, upper, forward AABB
-          > while ___ is left, down, backwards AABB
-          >  X__ is right, dowm, backwards AAB
-        --------------------------- */
-    [Flags]
-    public enum Octant
-    {
-        ___ = 0b_000,
-        X__ = 0b_100,
-        _Y_ = 0b_010,
-        __Z = 0b_001,
-        XY_ = X__ | _Y_,
-        X_Z = X__ | __Z,
-        _YZ = _Y_ | __Z,
-        XYZ = X__ | _Y_ | __Z,
-    };
     /* ---------------------
      * parent nodes will never contain elements,
      * leaf nodes will always contain elements
+     * octnode will always contain zero or 8 children, contigously distributed after FirstChildIndex
      --------------------*/
-    public class OctNode
+    public struct OctNode
     {
         #region members
 
-        public Octree Tree;
-
-        //todo solution??
-        // public int Index;
         public AABB AABB;
         
-        public OctValue FirstValue;
-        public int ValueCount;
-        public bool IsLeaf;
+        public IndexToOctValue LastValue;
+        public int ValueCount; //a count of < 0 means the node is a leaf and is not to be added
 
-        public OctNode ChildXYZ;
-        public OctNode Child_YZ;
-        public OctNode ChildX_Z;
-        public OctNode ChildXY_;
-        public OctNode Child__Z;
-        public OctNode ChildX__;
-        public OctNode Child_Y_;
-        public OctNode Child___;
+        public int FirstChildIndex;
+        
+        public IndexToOctNode Child___ => new IndexToOctNode(FirstChildIndex + 0);
+        public IndexToOctNode ChildX__ => new IndexToOctNode(FirstChildIndex + 1);
+        public IndexToOctNode Child_Y_ => new IndexToOctNode(FirstChildIndex + 2);
+        public IndexToOctNode Child__Z => new IndexToOctNode(FirstChildIndex + 3);
+        public IndexToOctNode ChildXY_ => new IndexToOctNode(FirstChildIndex + 4);
+        public IndexToOctNode ChildX_Z => new IndexToOctNode(FirstChildIndex + 5);
+        public IndexToOctNode Child_YZ => new IndexToOctNode(FirstChildIndex + 6);
+        public IndexToOctNode ChildXYZ => new IndexToOctNode(FirstChildIndex + 7);
         #endregion
 
-        #region constructors
-        public OctNode(Octree tree, AABB aabb)
+        public OctNode(AABB aabb)
         {
-            Tree = tree;
             AABB = aabb;
+            
+            LastValue  = IndexToOctValue.Empty();
 
             ValueCount = 0;
-            IsLeaf = true;
+
+            FirstChildIndex = int.MinValue;
         }
         
-        #endregion
-        
-        public void InsertValueInSelfOrChildren(OctValue value)
+        public bool HasChildren() => FirstChildIndex >= 0;
+
+        public readonly NativeSlice<OctNode> GetChildren(NativeArray<OctNode> nodes)
         {
-            
-            if (IsLeaf)
-            {
-                InsertValueInSelf(value);
-
-                float theoreticalChildHalfWidths = AABB.HalfWidth / 2f;
-                //if exceeded maxium allowed values,
-                //and child would not be less than min half width
-                if (ValueCount > Tree.MaxValuesPerNode && 
-                    theoreticalChildHalfWidths > Tree.MinHalfSize)
-                {
-                    //redistribute values into children
-                    OctValue currentValue = FirstValue;
-                    while (currentValue != null)
-                    {
-                        var nextValue = currentValue.NextValue;
-                        currentValue.NextValue = null;
-                        
-                        InsertValueInChildren(currentValue);
-                        
-                        currentValue = nextValue;
-                    }
-
-                    //this node is no longer a leaf, revoke ownership of values
-                    IsLeaf = false;
-                    FirstValue = null;
-                }
-
-            }
-            //if not a leaf, find child and insert
-            else
-            {
-                InsertValueInChildren(value);
-            }
-        }
-
-        public OctValue GetLastValue()
-        {
-            OctValue currentValue = FirstValue;
-            OctValue previousValue = null;
-            
-            while (currentValue != null)
-            {
-                previousValue = currentValue;
-                currentValue = currentValue.NextValue;
-            }
-
-            return previousValue;
-        }
-
-        public void ForEachValue(Action<OctValue> action)
-        {
-            OctValue currentValue = FirstValue;
-            while (currentValue != null)
-            {
-                action.Invoke(currentValue);
-                currentValue = currentValue.NextValue;
-            }
-        }
-        
-        public void ForEachChild(Action<OctNode> action)
-        {
-            if (Child___ != null) action.Invoke(Child___);
-            if (ChildX__ != null) action.Invoke(ChildX__);
-            if (Child_Y_ != null) action.Invoke(Child_Y_);
-            if (Child__Z != null) action.Invoke(Child__Z);
-            if (ChildXY_ != null) action.Invoke(ChildXY_);
-            if (ChildX_Z != null) action.Invoke(ChildX_Z);
-            if (Child_YZ != null) action.Invoke(Child_YZ);
-            if (ChildXYZ != null) action.Invoke(ChildXYZ);
-        }
-
-        //todo make getOctantS from AABB.
-        //todo get children from octant
-        public OctNode GetChildFromPoint(Vector3 point)
-        {
-            var octant = OctantAtPosition(point);
-            var child = GetChildNodeFromOctant(octant);
-            return child;
-        }
-        
-        void InsertValueInSelf(OctValue value)
-        {
-            //if no values currently in node
-            if (FirstValue == null)
-            {
-                FirstValue = value;
-            }
-            //otherwise find last element and link to new element
-            else
-            {
-                var lastElement = GetLastValue();
-                lastElement.NextValue = value;
-            }
-
-            ValueCount++;
-        }
-        
-        /// <remarks> creates new children as necessary</remarks>
-        void InsertValueInChildren(OctValue value)
-        {
-            var point = value.Position;
-            var octant = OctantAtPosition(point);
-            var child = GetChildNodeFromOctant(octant);
-            
-            //if it doesn't exist, create new child and set to appropriate octNode child member
-            if (child == null)
-            {
-                child = CreateChildNodeAtOctant(octant);
-            }
-            
-            child.InsertValueInSelfOrChildren(value);
-        }
-        
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="octant"></param>
-        /// <returns>index of child in octnode array</returns>
-        OctNode CreateChildNodeAtOctant(Octant octant)
-        {
-            var tree = Tree;
-            var nodes = Tree.Nodes;
-            
-            var octantPosition = OctantToVector3Int(octant);
-            var quarterWidth = AABB.HalfWidth / 2;
-            var childOffset = (Vector3) octantPosition * quarterWidth;
-            var childPos = AABB.Center + childOffset;
-
-            var newOctNode = new OctNode(tree, new AABB(childPos, quarterWidth));
-            
-            nodes.Add(newOctNode);
-            SetChildNodeFromOctant(octant, newOctNode);
-
-            return newOctNode;
-        }
-
-        ///<returns>returns values between [-1,-1,-1] and [1,1,1]</returns>
-        Vector3Int OctantToVector3Int(Octant octant)
-        {
-            int x = (int) (octant & Octant.X__) >> 2;
-            int y = (int) (octant & Octant._Y_) >> 1;
-            int z = (int) (octant & Octant.__Z) >> 0;
-
-            var vec = (new Vector3Int(x, y, z));
-            var scaledBetweenOneAndMinusOne = (vec * 2) - new Vector3Int(1, 1, 1);
-            //todo debug
-            return scaledBetweenOneAndMinusOne;
+            NativeSlice<OctNode> results = new NativeSlice<OctNode>(nodes, FirstChildIndex, 8);
+            return results;
         }
 
         /// <returns> returns number between 0-7 which represents what octant
@@ -232,42 +66,12 @@ namespace SpatialPartitioning
             return x | y | z;
         }
         
-        // public List<OctNode> ChildrenInsideSphere(Sphere sphere)
-        // {
-        //     //todo convert to struct then native list NativeList<OctNode>(Allocator.Temp);
-        //     List<OctNode> results = new List<OctNode>();
-        //     ForEachChild((child) =>
-        //     {
-        //         if (Common.SphereAABBOverlap(sphere, AABB))
-        //         {
-        //             results.Add(child);
-        //         }
-        //     });
-        //     return results;
-        // }
-
-        public bool SphereOverlaps(Sphere sphere) => Intersection.SphereAABBOverlap(sphere, AABB);
-        public bool PointOverlaps(Vector3 position) => Intersection.PointAABBOverlap(position, AABB);
-        
-        
-        // public NativeArray<int> OctantsAtPosition(Vector3 point)
-        // {
-        //     var boxCenter = Center;
-        //     
-        //     int x = point.x > boxCenter.x ? 0b_100 : 0;
-        //     int y = point.y > boxCenter.y ? 0b_010 : 0;
-        //     int z = point.z > boxCenter.z ? 0b_001 : 0;
-        //
-        //     return x | y | z;
-        // }
-        
-        
         /// <summary>
         /// 
         /// </summary>
         /// <param name="octant"></param>
         /// <returns> returns -1 if no child exists, otherwise the index into the nodes element</returns>
-        OctNode GetChildNodeFromOctant(Octant octant)
+        public IndexToOctNode GetChildNodeFromOctant(Octant octant)
         {
             switch (octant)
             {
@@ -282,22 +86,10 @@ namespace SpatialPartitioning
                 default: throw new ArgumentException("octant must be between values 0 to 7!");
             }
         }
+
+        public bool SphereOverlaps(Sphere sphere) => Intersection.SphereAABBOverlap(sphere, AABB);
         
-        void SetChildNodeFromOctant(Octant octant, OctNode value)
-        {
-            switch (octant)
-            {
-                case Octant.XYZ: ChildXYZ = value; return;
-                case Octant._YZ: Child_YZ = value; return;
-                case Octant.X_Z: ChildX_Z = value; return;
-                case Octant.XY_: ChildXY_ = value; return;
-                case Octant.__Z: Child__Z = value; return;
-                case Octant.X__: ChildX__ = value; return;
-                case Octant._Y_: Child_Y_ = value; return;
-                case Octant.___: Child___ = value; return;
-                default: throw new ArgumentException("octant must be between values 0 to 7!");
-            }
-        }
+        public bool PointOverlaps(Vector3 position) => Intersection.PointAABBOverlap(position, AABB);
         
     }
 }
