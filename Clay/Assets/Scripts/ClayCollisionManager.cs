@@ -100,6 +100,7 @@ namespace ClaySimulation
         
         void CalculateParticleForces()
         {
+            float avgNeighborCount = 0;
             float deltaTime = Time.deltaTime;
             
             #region collision and force calc
@@ -110,13 +111,18 @@ namespace ClaySimulation
                 var querySphere = new Sphere(p1Pos, _maxRadius);
 
                 //var queryResultsNumber = Octree.QueryNonAlloc(querySphere, _queryBuffer);
-                 var queryResults = QueryFiniteByMinDist(querySphere, _maxParticlesToSimulate);
+                var queryResults = QueryFiniteByMinDist(querySphere, _maxParticlesToSimulate);
+                avgNeighborCount += queryResults.Length;
                 
                 for (int j = 0; j < queryResults.Length; j++)
                 {
                     var p2Pos = queryResults[j];
 
-                    if (p2Pos == p1Pos) continue; //if the same particle
+                    // if (p2Pos == p1Pos)
+                    // {
+                    //     Debug.Log("same part in sim");
+                    //     continue;
+                    // } //if the same particle
                     
                     Vector3 p1ToP2 = p2Pos - p1Pos;
                     float p1P2Dist = p1ToP2.magnitude;
@@ -145,6 +151,9 @@ namespace ClaySimulation
                 
             }
             #endregion
+
+            avgNeighborCount /= _spawnOnStart;
+            Debug.Log(avgNeighborCount);
         }
 
         void ApplyParticleForces()
@@ -185,39 +194,48 @@ namespace ClaySimulation
         //then filter out to get the [maxQuery] closest points to the sphere
         NativeList<Vector3> QueryFiniteByMinDist(Sphere sphere, int maxQuery)
         {
-            var query = new NativeArray<Vector3>(_spawnOnStart, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            
             var finiteResults = new NativeList<Vector3>(maxQuery, Allocator.Temp);
             var finiteResultsDistSqr = new NativeList<float>(maxQuery, Allocator.Temp);
-
+            
             float currentMaxDistSqr = float.MinValue;
             int currentMaxIndex = -1;
             
+            float maxDistOfSphereSqrd = sphere.Radius * sphere.Radius;
+            
+            var query = new NativeArray<Vector3>(_spawnOnStart, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             int resultsCount = Octree.QueryNonAlloc(sphere, query);
-
+            
+            
             for (int i = 0; i < resultsCount; i++)
             {
+                
                 var currentQuery = query[i];
+                var distSqr = Vector3.SqrMagnitude(currentQuery - sphere.Position);
+
+                //if the same particle (the same pos), or if outside max range, continue
+                if (distSqr == 0 || 
+                    distSqr > maxDistOfSphereSqrd)
+                {
+                    continue;
+                }
                 
                 //if haven't filled up _maxParticlesToSimulate, just add the query to the finite buffers
                 if (finiteResults.Length < maxQuery)
                 {
-                    var distSqr = Vector3.SqrMagnitude(currentQuery - sphere.Position);
                     finiteResults.Add(currentQuery);
                     finiteResultsDistSqr.Add(distSqr);
-
-                    //if
+                    
                     if (distSqr > currentMaxDistSqr)
                     {
                         currentMaxDistSqr = distSqr;
                         currentMaxIndex = finiteResults.Length - 1;
                     }
                 }
+                
                 else
                 {
                     //otherwise replace the current max index, only if the current query has a larger distSqrd
                     //then go through the finite buffers to find the new largest dist sqrd from the sphere
-                    var distSqr = Vector3.SqrMagnitude(currentQuery - sphere.Position);
                     if (distSqr < currentMaxDistSqr)
                     {
                         finiteResults[currentMaxIndex] = currentQuery;
@@ -234,11 +252,10 @@ namespace ClaySimulation
                                 currentMaxIndex = j;
                             }
                         }
-                     
                     }
-                }
-            }
-
+                } //end-else
+            } //end-forloop
+            
             return finiteResults;
         }
 
