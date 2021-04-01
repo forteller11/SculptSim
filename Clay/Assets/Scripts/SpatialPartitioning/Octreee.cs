@@ -6,15 +6,15 @@ using UnityEngine;
 
 namespace SpatialPartitioning
 {
-    public class Octree : IDisposable
+    public struct Octree : IDisposable
     {
         
         //todo use lists instead, .Clear() doesn't impose any real perf decreases
         public NativeArray<OctNode> Nodes;
-        public int NodesLength;
+        public int NodesCount;
         
         public NativeArray<OctValue> Values;
-        public int ValuesLength;
+        public int ValuesCount;
         
         public OctSettings Settings;
 
@@ -22,14 +22,18 @@ namespace SpatialPartitioning
         {
             Nodes  = new NativeArray<OctNode>(maxParticles/2 + 40, Allocator.Persistent);
             Values = new NativeArray<OctValue>(maxParticles+1, Allocator.Persistent);
+            
+            NodesCount  = 0;
+            ValuesCount = 0;
+            
             Settings = settings;
         }
 
         #region construction
         public void CleanAndPrepareForInsertion(AABB aabb)
         {
-            NodesLength  = 1;
-            ValuesLength = 1;
+            NodesCount  = 1;
+            ValuesCount = 1; //todo make values start at 0 not 1???
             
             Nodes[0] = new OctNode(aabb);
         }
@@ -40,7 +44,7 @@ namespace SpatialPartitioning
             var root = rootIndex.GetElement(Nodes);
             if (root.PointOverlaps(point))
             {
-                IndexToOctValue valueIndex = IndexToOctValue.NewElement(Values, ref ValuesLength, OctValue.CreateTail(point));
+                IndexToOctValue valueIndex = IndexToOctValue.NewElement(Values, ref ValuesCount, OctValue.CreateTail(point));
                 InsertPointInNodeOrChildren(rootIndex, valueIndex);
             }
             else
@@ -97,7 +101,7 @@ namespace SpatialPartitioning
                         currentRedistributeValue.PreviousValue = IndexToOctValue.Empty();
                         currentRedistributeValueIndex.SetElement(Values, currentRedistributeValue);
                         
-                        InsertValueInChildren(currentRedistributeValueIndex);
+                        InsertValueInChildren(ref node, currentRedistributeValueIndex);
 
                         currentRedistributeValueIndex = nextRedistributeValueCache;
                     }
@@ -112,32 +116,29 @@ namespace SpatialPartitioning
             //if node is not a leaf
             else
             {
-                InsertValueInChildren(valueToInsertIndex);
+                InsertValueInChildren(ref node, valueToInsertIndex);
             }
 
-            //persist state of node index by copying it to global array
-            nodeIndex.SetElement(Nodes, node);
-
-            // <remarks> creates new children as necessary</remarks>
-            void InsertValueInChildren(IndexToOctValue valueToInsert)
-            {
-                if (!node.HasChildren())
-                {
-                    CreateAllChildrenAndPersist(ref node);
-                }
-                
-                var octant = node.OctantAtPosition(valueToInsert.GetElement(Values).Position);
-                var childNodeIndex = node.GetChildNodeFromOctant(octant);
-
-                InsertPointInNodeOrChildren(childNodeIndex, valueToInsert);
-            }
         }
         
-        void CreateAllChildrenAndPersist(ref OctNode node)
+        private void InsertValueInChildren(ref OctNode node, IndexToOctValue valueToInsert)
+        {
+            if (!node.HasChildren())
+            {
+                CreateAllChildrenAndPersist(ref node);
+            }
+                
+            var octant = node.OctantAtPosition(valueToInsert.GetElement(Values).Position);
+            var childNodeIndex = node.GetChildNodeFromOctant(octant);
+
+            InsertPointInNodeOrChildren(childNodeIndex, valueToInsert);
+        }
+        
+        private void CreateAllChildrenAndPersist(ref OctNode node)
         {
             //THE ORDER MATTERS
             //as the order in the array implicit tells the program what octant the child is
-            node.FirstChildIndex = NodesLength;
+            node.FirstChildIndex = NodesCount;
             CreateChildAtOctant(in node, Octant.___);
             CreateChildAtOctant(in node, Octant.X__);
             CreateChildAtOctant(in node, Octant._Y_);
@@ -148,7 +149,7 @@ namespace SpatialPartitioning
             CreateChildAtOctant(in node, Octant.XYZ);
         }
         
-        void CreateChildAtOctant(in OctNode node, Octant octant)
+        private void CreateChildAtOctant(in OctNode node, Octant octant)
         {
             var octantPosition = OctHelpers.OctantToVector3Int(octant);
             var quarterWidth = node.AABB.HalfWidth / 2;
@@ -157,8 +158,8 @@ namespace SpatialPartitioning
 
             var childNode = new OctNode(new AABB(childPos, quarterWidth));
             
-            Nodes[NodesLength] = childNode;
-            NodesLength++;
+            Nodes[NodesCount] = childNode;
+            NodesCount++;
         }
 
         #endregion
@@ -175,7 +176,7 @@ namespace SpatialPartitioning
             return resultsCount;
         }
 
-        void GetOverlappingChildrenOrAddToResultsDepthFirst(in Sphere sphere, in OctNode node, NativeArray<Vector3> results, ref int resultsCount)
+        private void GetOverlappingChildrenOrAddToResultsDepthFirst(in Sphere sphere, in OctNode node, NativeArray<Vector3> results, ref int resultsCount)
         {
             //if a parent, recursively call function on children
             if (node.ValueCount < 0)
