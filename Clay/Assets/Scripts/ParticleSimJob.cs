@@ -1,3 +1,4 @@
+using System;
 using Collision;
 using DefaultNamespace;
 using SpatialPartitioning;
@@ -5,29 +6,30 @@ using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
 
-public struct ParticleSystem : IJobParallelFor
+public struct ParticleSimJob : IJobParallelFor, IDisposable
 {
-    [ReadOnly] public ClaySimSettings Settings;
-    [ReadOnly] public CurveNormalized ForceMultCurve;
+    #region inputs
     [ReadOnly] public Octree Octree;
-    [ReadOnly] public float DeltaTime;
+    [ReadOnly] public NativeArray<Vector3> Positions;
+    [ReadOnly] public CurveNormalized ForceMultCurve;
+    public float ConstMult;
+    public float MinRadius;
+    public float MaxRadius;
+    public float DesiredPercentBetweenMinMax;
+    public int MaxParticlesToSimulate;
+    public float DeltaTime;
+    #endregion
     
-    public NativeArray<Vector3> QueryResults;
+    
     public NativeArray<Vector3> ToMove;
 
     public void Execute(int index)
     {
         float deltaTime = DeltaTime;
-        var particles = Settings.Particles;
-        float minRadius = Settings.MinMaxRadius.x;
-        float maxRadius = Settings.MinMaxRadius.y;
-        float desiredPercentBetweenMinMax = Settings.DesiredPercentBetweenMinMax;
-        int maxParticlesToSimulate = Settings.MaxParticlesToSimulate;
-        float constantMult = Settings.ConstMult;
-        
-        var p1Pos = particles[index];
-        var querySphere = new Sphere(p1Pos, maxRadius);
-        var queryResults = QueryFiniteByMinDist(querySphere, maxParticlesToSimulate);
+
+        var p1Pos = Positions[index];
+        var querySphere = new Sphere(p1Pos, MaxRadius);
+        var queryResults = QueryFiniteByMinDist(querySphere, MaxParticlesToSimulate);
 
         for (int j = 0; j < queryResults.Length; j++)
         {
@@ -38,19 +40,19 @@ public struct ParticleSystem : IJobParallelFor
             Vector3 p1ToP2Dir = p1ToP2 / p1P2Dist;
                 
 
-            if (p1P2Dist < maxRadius)
+            if (p1P2Dist < MaxRadius)
             {
-                float percentageBetweenMinMax = Mathf.InverseLerp(minRadius, maxRadius, p1P2Dist);
-                float currentToDesiredPercentage = percentageBetweenMinMax - desiredPercentBetweenMinMax;
-                float desiredDist = Mathf.Lerp(minRadius, maxRadius, desiredPercentBetweenMinMax);
+                float percentageBetweenMinMax = Mathf.InverseLerp(MinRadius, MaxRadius, p1P2Dist);
+                float currentToDesiredPercentage = percentageBetweenMinMax - DesiredPercentBetweenMinMax;
+                float desiredDist = Mathf.Lerp(MinRadius, MaxRadius, DesiredPercentBetweenMinMax);
                     
                 float indexInCurve;
                 if (p1P2Dist < desiredDist)
-                    indexInCurve = -Mathf.InverseLerp(desiredDist, minRadius, p1P2Dist); //0, -1
+                    indexInCurve = -Mathf.InverseLerp(desiredDist, MinRadius, p1P2Dist); //0, -1
                 else 
-                    indexInCurve = Mathf.InverseLerp(desiredDist, maxRadius, p1P2Dist); //0, 1
+                    indexInCurve = Mathf.InverseLerp(desiredDist, MaxRadius, p1P2Dist); //0, 1
                     
-                float scale = currentToDesiredPercentage * constantMult * ForceMultCurve.EvaluateDiscrete(indexInCurve) * deltaTime;
+                float scale = currentToDesiredPercentage * ConstMult * ForceMultCurve.EvaluateDiscrete(indexInCurve) * deltaTime;
                 Vector3 posToAddScaled = p1ToP2Dir * scale;
                     
                 ToMove[index] += posToAddScaled;
@@ -64,15 +66,15 @@ public struct ParticleSystem : IJobParallelFor
         //then filter out to get the [maxQuery] closest points to the sphere
         NativeList<Vector3> QueryFiniteByMinDist(Sphere sphere, int maxQuery)
         {
-            var finiteResults = new NativeList<Vector3>(maxQuery, Allocator.Temp);
-            var finiteResultsDistSqr = new NativeList<float>(maxQuery, Allocator.Temp);
+            var finiteResults = new NativeList<Vector3>(maxQuery, Allocator.TempJob);
+            var finiteResultsDistSqr = new NativeList<float>(maxQuery, Allocator.TempJob);
             
             float currentMaxDistSqr = float.MinValue;
             int currentMaxIndex = -1;
             
             float maxDistOfSphereSqrd = sphere.Radius * sphere.Radius;
             
-            var query = new NativeArray<Vector3>(Settings.Particles.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            var query = new NativeArray<Vector3>(Positions.Length, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             int resultsCount = Octree.QueryNonAlloc(sphere, query);
             
             
@@ -127,5 +129,13 @@ public struct ParticleSystem : IJobParallelFor
             } //end-forloop
             
             return finiteResults;
+        }
+
+        public void Dispose()
+        {
+            Octree.Dispose();
+            Positions.Dispose();
+            ForceMultCurve.Dispose();
+            ToMove.Dispose();
         }
 }

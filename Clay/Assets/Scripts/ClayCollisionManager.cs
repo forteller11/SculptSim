@@ -2,10 +2,12 @@
 using System;
 using System.Collections.Generic;
 using Collision;
+using DefaultNamespace;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using SpatialPartitioning;
 using Unity.Collections;
+using Unity.Jobs;
 using Random = Unity.Mathematics.Random;
 
 
@@ -22,8 +24,7 @@ namespace ClaySimulation
         [FoldoutGroup("Octree")] [SerializeField] private float _octreeRadiusMultiplier;
         [FoldoutGroup("Octree")] [SerializeField] int _maxParticlesToSimulate = 5;
 
-        [FoldoutGroup("Sim Settings")] [SerializeField] float _minRadius = 0;
-        [FoldoutGroup("Sim Settings")] [SerializeField] float _maxRadius = 2;
+        [FoldoutGroup("Sim Settings")] [SerializeField] [MinMaxSlider(0,4, ShowFields = true)] Vector2 _minMaxRadius = new Vector2(0.2f,0.3f);
         [FoldoutGroup("Sim Settings")] [SerializeField] float _desiredPercentBetweenMinMax = .5f;
         [FoldoutGroup("Sim Settings")] [SerializeField] [Range(0,1)] private float  _constantMultiplier = .05f;
         [Tooltip("x== 0 means at desired percent, -1 == at min, 1 == at max")] 
@@ -40,8 +41,7 @@ namespace ClaySimulation
         private Octree Octree;
         
         private List<Clay> _particles;
-        private List<Vector3> _particlesToMove;
-        private List<Vector4> _particlePositions;
+        private NativeArray<Vector3> _particlePositions;
         private NativeArray<Vector3> _queryBuffer;
 
         #endregion
@@ -50,7 +50,7 @@ namespace ClaySimulation
         {
             _material = GetComponent<MeshRenderer>().material;
             
-            #region particles
+            #region spawn
             _particles = new List<Clay>(_spawnOnStart);
             var random = Random.CreateFromIndex((uint)System.DateTime.Now.Millisecond);
             for (int i = 0; i < _spawnOnStart; i++)
@@ -62,16 +62,15 @@ namespace ClaySimulation
                 
                 _particles.Add(newParticle);
             }
-            
-            _particlesToMove = new List<Vector3>(_particles.Count);
-            for (int i = 0; i < _particles.Count; i++)
-                _particlesToMove.Add(Vector3.zero);
-            
-            _particlePositions = new List<Vector4>(_particles.Count);
-            for (int i = 0; i < _particles.Count; i++)
-                _particlePositions.Add(new Vector4(0,0,0, 0));
             #endregion
-            
+
+            _particlePositions = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+
+            for (int i = 0; i < _particles.Count; i++)
+            {
+                _particlePositions[i] = _particles[i].transform.position;
+            }
+
             #region octree
             Octree = new Octree(_octSettings, _spawnOnStart);
             _queryBuffer = new NativeArray<Vector3>(_spawnOnStart, Allocator.Persistent);
@@ -90,11 +89,6 @@ namespace ClaySimulation
             CalculateParticleForces();
         }
 
-        private void FixedUpdate()
-        {
-            ApplyParticleForces();
-        }
-
         void ConstructOctree()
         {
             Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier));
@@ -108,176 +102,35 @@ namespace ClaySimulation
         
         void CalculateParticleForces()
         {
-            float deltaTime = Time.deltaTime;
+            var job = new ParticleSimJob();
             
-            #region collision and force calc
-            for (int i = 0; i < _particles.Count; i++)
-            {
-                var p1Pos = _particles[i].transform.position;
-
-                var querySphere = new Sphere(p1Pos, _maxRadius);
-
-                var queryResults = QueryFiniteByMinDist(querySphere, _maxParticlesToSimulate);
-
-                for (int j = 0; j < queryResults.Length; j++)
-                {
-                    var p2Pos = queryResults[j];
-
-                    Vector3 p1ToP2 = p2Pos - p1Pos;
-                    float p1P2Dist = p1ToP2.magnitude;
-                    Vector3 p1ToP2Dir = p1ToP2 / p1P2Dist;
-                    
-
-                    if (p1P2Dist < _maxRadius)
-                    {
-                        float percentageBetweenMinMax = Mathf.InverseLerp(_minRadius, _maxRadius, p1P2Dist);
-                        float desiredPercentageBetweenMinMax = _desiredPercentBetweenMinMax;
-                        float currentToDesiredPercentage = percentageBetweenMinMax - desiredPercentageBetweenMinMax;
-                        float desiredDist = Mathf.Lerp(_minRadius, _maxRadius, _desiredPercentBetweenMinMax);
-                        
-                        float indexInCurve;
-                        if (p1P2Dist < desiredDist)
-                            indexInCurve = -Mathf.InverseLerp(desiredDist, _minRadius, p1P2Dist); //0, -1
-                        else 
-                            indexInCurve = Mathf.InverseLerp(desiredDist, _maxRadius, p1P2Dist); //0, 1
-                        
-                        float scale = currentToDesiredPercentage * _constantMultiplier * _forceMultiplierCurve.Evaluate(indexInCurve) * deltaTime;
-                        Vector3 posToAddScaled = p1ToP2Dir * scale;
-                        
-                        _particlesToMove[i] += posToAddScaled;
-                    }
-                }
-                
-            }
-            #endregion
+            job.Octree = Octree;
             
-        }
-        
-        //Query for all points
-        //then filter out to get the [maxQuery] closest points to the sphere
-        NativeList<Vector3> QueryFiniteByMinDist(Sphere sphere, int maxQuery)
-        {
-            var finiteResults = new NativeList<Vector3>(maxQuery, Allocator.Temp);
-            var finiteResultsDistSqr = new NativeList<float>(maxQuery, Allocator.Temp);
+            job.Positions = _particlePositions;
+            job.ConstMult = _constantMultiplier;
+            job.DeltaTime = Time.deltaTime;
+            job.MinRadius = _minMaxRadius.x;
+            job.MaxRadius = _minMaxRadius.y;
+            job.DesiredPercentBetweenMinMax = _desiredPercentBetweenMinMax;
+            job.MaxParticlesToSimulate = _maxParticlesToSimulate;
+            job.ForceMultCurve = new CurveNormalized(_forceMultiplierCurve); //todo cache this value
             
-            float currentMaxDistSqr = float.MinValue;
-            int currentMaxIndex = -1;
+            var jobHandle = job.Schedule(_particles.Count, 1); //todo increase batch count and measure
+            jobHandle.Complete();
             
-            float maxDistOfSphereSqrd = sphere.Radius * sphere.Radius;
-            
-            var query = new NativeArray<Vector3>(_spawnOnStart, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            int resultsCount = Octree.QueryNonAlloc(sphere, query);
-            
-            
-            for (int i = 0; i < resultsCount; i++)
-            {
-                
-                var currentQuery = query[i];
-                var distSqr = Vector3.SqrMagnitude(currentQuery - sphere.Position);
-
-                //if the same particle (the same pos), or if outside max range, continue
-                if (distSqr == 0 || 
-                    distSqr > maxDistOfSphereSqrd)
-                {
-                    continue;
-                }
-                
-                //if haven't filled up _maxParticlesToSimulate, just add the query to the finite buffers
-                if (finiteResults.Length < maxQuery)
-                {
-                    finiteResults.Add(currentQuery);
-                    finiteResultsDistSqr.Add(distSqr);
-                    
-                    if (distSqr > currentMaxDistSqr)
-                    {
-                        currentMaxDistSqr = distSqr;
-                        currentMaxIndex = finiteResults.Length - 1;
-                    }
-                }
-                
-                else
-                {
-                    //otherwise replace the current max index, only if the current query has a larger distSqrd
-                    //then go through the finite buffers to find the new largest dist sqrd from the sphere
-                    if (distSqr < currentMaxDistSqr)
-                    {
-                        finiteResults[currentMaxIndex] = currentQuery;
-                        finiteResultsDistSqr[currentMaxIndex] = distSqr;
-
-                        currentMaxDistSqr = float.MinValue;
-                        currentMaxIndex = -1;
-                        
-                        for (int j = 0; j < finiteResults.Length; j++)
-                        {
-                            if (finiteResultsDistSqr[j] > currentMaxDistSqr)
-                            {
-                                currentMaxDistSqr = finiteResultsDistSqr[j];
-                                currentMaxIndex = j;
-                            }
-                        }
-                    }
-                } //end-else
-            } //end-forloop
-            
-            return finiteResults;
-        }
-
-        void ApplyParticleForces()
-        {
             #region move particles
             for (int i = 0; i < _particles.Count; i++)
             {
                 var pos = _particles[i].transform.position;
-                var newPos = pos + _particlesToMove[i];
+                var newPos = pos + job.ToMove[i];
 
                 _particles[i].RigidBody.MovePosition(newPos);
-                _particlesToMove[i] = Vector3.zero;
+                // _particlesToMove[i] = Vector3.zero;
             }
+            
+            job.Dispose();
             #endregion
         }
-
-        private void OnDrawGizmosSelected()
-        {
-            throw new NotImplementedException();
-            
-            if (Application.isPlaying && DrawParticles)
-            {
-                Random ran = Random.CreateFromIndex(0);
-                for (int i = 0; i < _particles.Count; i++)
-                {
-                    var particle = _particles[i];
-                    var color = Common.RandomColor(ref ran);
-                    Gizmos.color = color;
-
-                    Gizmos.DrawSphere(particle.RigidBody.position, _minRadius);
-                    Gizmos.DrawWireSphere(particle.RigidBody.position, _maxRadius);
-                    Gizmos.DrawWireSphere(particle.RigidBody.position, Mathf.Lerp(_minRadius, _maxRadius, _desiredPercentBetweenMinMax));
-                }
-            }
-
-            if (Application.isPlaying && DrawOctree)
-            {
-                Random ran = Random.CreateFromIndex(3759);
-                for (int i = 0; i < Octree.Nodes.Length; i++)
-                {
-                    var nodes = Octree.Nodes;
-                    var width = nodes[i].AABB.HalfWidth * 2;
-                    
-                    var color = Common.RandomColor(ref ran);
-                    Gizmos.color = color;
-                    
-                    // Gizmos.DrawWireCube(nodes[i].AABB.Center, new Vector3(width, width, width));
-                    float offset = 0.005f;
-                    Gizmos.DrawWireCube(nodes[i].AABB.Center, new Vector3(width, width, width) - new Vector3(offset,offset,offset));
-
-                    Octree.GetValuesAsArray(nodes[i], out var nodeValues);
-                    for (int j = 0; j < nodeValues.Length; j++)
-                        Gizmos.DrawSphere(nodeValues[j].Position, 0.05f);
-                    nodeValues.Dispose();
-
-                }
-                
-            }
-        }
+        
     }
 }

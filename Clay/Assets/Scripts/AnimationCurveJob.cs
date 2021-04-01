@@ -1,9 +1,10 @@
-﻿using Unity.Collections;
+﻿using System;
+using Unity.Collections;
 using UnityEngine;
 
 namespace DefaultNamespace
 {
-    public struct CurveNormalized
+    public readonly struct CurveNormalized : IDisposable
     {
         public readonly NativeArray<float> Samples;
 
@@ -31,5 +32,9 @@ namespace DefaultNamespace
         // {
         //     
         // }
+        public void Dispose()
+        {
+            Samples.Dispose();
+        }
     }
 }
