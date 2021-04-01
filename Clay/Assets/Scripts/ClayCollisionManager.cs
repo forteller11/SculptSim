@@ -76,10 +76,14 @@ namespace ClaySimulation
             #endregion
         }
 
-        private void FixedUpdate()
+        private void Update()
         {
             ConstructOctree();
             CalculateParticleForces();
+        }
+
+        private void FixedUpdate()
+        {
             ApplyParticleForces();
         }
 
@@ -96,6 +100,8 @@ namespace ClaySimulation
         
         void CalculateParticleForces()
         {
+            float deltaTime = Time.deltaTime;
+            
             #region collision and force calc
             for (int i = 0; i < _particles.Count; i++)
             {
@@ -103,9 +109,10 @@ namespace ClaySimulation
 
                 var querySphere = new Sphere(p1Pos, _maxRadius);
 
-                var queryResults = QueryFiniteByMinDist(querySphere, _maxParticlesToSimulate);
+                var queryResults = Octree.QueryNonAlloc(querySphere, _queryBuffer);
+                // var queryResults = Octree.QueryNonAlloc(querySphere, _maxParticlesToSimulate);
                 
-                for (int j = 0; j < queryResults.Length; j++)
+                for (int j = 0; j < queryResults; j++)
                 {
                     var p2Pos = _queryBuffer[j];
 
@@ -129,7 +136,7 @@ namespace ClaySimulation
                         else 
                             indexInCurve = Mathf.InverseLerp(desiredDist, _maxRadius, p1P2Dist); //0, 1
                         
-                        float scale = currentToDesiredPercentage * _constantMultiplier * _forceMultiplierCurve.Evaluate(indexInCurve);
+                        float scale = currentToDesiredPercentage * _constantMultiplier * _forceMultiplierCurve.Evaluate(indexInCurve) * deltaTime;
                         Vector3 posToAddScaled = p1ToP2Dir * scale;
                         
                         _particlesToMove[i] += posToAddScaled;
@@ -155,11 +162,6 @@ namespace ClaySimulation
         }
         
         
-
-        private void Update()
-        {
-            // SendParticlesToShader();
-        }
 
         private void SendParticlesToShader()
         {

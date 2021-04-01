@@ -472,15 +472,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _particlePrefab: {fileID: 1533876711183798372, guid: abfd8889d7f4f914e9c47fac2b7d94c2, type: 3}
   _spawnOnStart: 600
-  _radiusToSpawnIn: 1
+  _radiusToSpawnIn: 1.5
   _octSettings:
     MaxValuesPerNode: 16
     MinHalfSize: 0.3
   _octreeRadiusMultiplier: 3
+  _maxParticlesToSimulate: 5
   _minRadius: 0.2
   _maxRadius: 0.3
   _desiredPercentBetweenMinMax: 0.8
-  _constantMultiplier: 0.05
+  _constantMultiplier: 0.241
   _forceMultiplierCurve:
     serializedVersion: 2
     m_Curve:
