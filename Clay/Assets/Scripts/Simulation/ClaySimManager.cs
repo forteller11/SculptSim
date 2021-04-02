@@ -94,23 +94,21 @@ namespace ClaySimulation
 
         void ConstructOctree()
         {
-            _octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier));
+            var aabb = new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier);
+            var octConstructJob = _octree.CreateConstructJob(_particlePositions, aabb);
+
+            var job = octConstructJob.Schedule();
             
-            for (int i = 0; i < _particles.Count; i++)
-            {
-                var p3 =  _particles[i].transform.position;
-                _octree.Insert(p3);
-            }
+            job.Complete();
             
-            // var constructOctreeJob = new InsertOctreeJob()
-            // {
-            //     Positions = _particlePositions,
-            //     AABB = new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier),
-            //     Octree = _octree
-            // };
+            // _octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier));
             //
-            // var job = constructOctreeJob.Schedule();
-            // job.Complete();
+            // for (int i = 0; i < _particles.Count; i++)
+            // {
+            //     var p3 =  _particles[i].transform.position;
+            //     _octree.Insert(p3);
+            // }
+  
         }
         
         void CalculateParticleForces()
