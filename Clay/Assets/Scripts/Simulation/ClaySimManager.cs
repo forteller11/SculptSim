@@ -13,7 +13,7 @@ using Random = Unity.Mathematics.Random;
 
 namespace ClaySimulation
 {
-    public class ClayCollisionManager : MonoBehaviour
+    public class ClaySimManager : MonoBehaviour
     {
         #region members
         [FoldoutGroup("Spawn")] [SerializeField] [AssetsOnly] private Clay _particlePrefab;
@@ -84,6 +84,7 @@ namespace ClaySimulation
             Octree.Dispose();
             _queryBuffer.Dispose();
             _particlePositions.Dispose();
+            _toMove.Dispose();
         }
 
         private void Update()
@@ -106,25 +107,25 @@ namespace ClaySimulation
         
         void CalculateParticleForces()
         {
-            var job = new ParticleSimJob();
-            
-            job.Octree = Octree;
-            
-            job.Positions = _particlePositions;
-            job.ConstMult = _constantMultiplier;
-            job.DeltaTime = Time.deltaTime;
-            job.MinRadius = _minMaxRadius.x;
-            job.MaxRadius = _minMaxRadius.y;
-            job.DesiredPercentBetweenMinMax = _desiredPercentBetweenMinMax;
-            job.MaxParticlesToSimulate = _maxParticlesToSimulate;
-            job.ToMove = _toMove;
-            job.Query = _queryBuffer;
+            var job = new ParticleSimJob()
+            {
+                Octree = Octree,
+                Positions = _particlePositions,
+                ConstMult = _constantMultiplier,
+                DeltaTime = Time.deltaTime,
+                MinRadius = _minMaxRadius.x,
+                MaxRadius = _minMaxRadius.y,
+                DesiredPercentBetweenMinMax = _desiredPercentBetweenMinMax,
+                MaxParticlesToSimulate = _maxParticlesToSimulate,
+                ToMove = _toMove,
+                Query = _queryBuffer
+            };
 
+            
             var jobHandle = job.Schedule(_particles.Count, 1); //todo increase batch count and measure
+            
             jobHandle.Complete();
-
-            job.Dispose();
-        
+     
         }
 
         void MoveParticlesAndRefreshPositions()
