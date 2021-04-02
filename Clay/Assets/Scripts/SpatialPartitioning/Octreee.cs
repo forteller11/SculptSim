@@ -21,7 +21,7 @@ namespace SpatialPartitioning
         public Octree(OctSettings settings, int maxParticles)
         {
             Nodes  = new NativeArray<OctNode>(maxParticles/2 + 40, Allocator.Persistent);
-            Values = new NativeArray<OctValue>(maxParticles+1, Allocator.Persistent);
+            Values = new NativeArray<OctValue>(maxParticles, Allocator.Persistent);
             
             NodesCount  = 0;
             ValuesCount = 0;
@@ -33,7 +33,7 @@ namespace SpatialPartitioning
         public void CleanAndPrepareForInsertion(AABB aabb)
         {
             NodesCount  = 1;
-            ValuesCount = 1; //todo make values start at 0 not 1???
+            ValuesCount = 0; //todo make values start at 0 not 1???
             
             Nodes[0] = new OctNode(aabb);
         }
@@ -118,7 +118,8 @@ namespace SpatialPartitioning
             {
                 InsertValueInChildren(ref node, valueToInsertIndex);
             }
-
+            
+            nodeIndex.SetElement(Nodes, node);
         }
         
         private void InsertValueInChildren(ref OctNode node, IndexToOctValue valueToInsert)
