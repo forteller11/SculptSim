@@ -8,6 +8,7 @@ using UnityEngine;
 
 namespace ClaySimulation
 {
+    [BurstCompile]
     public struct ParticleSimJob : IJobParallelFor
     {
         #region inputs
