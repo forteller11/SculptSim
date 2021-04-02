@@ -38,7 +38,7 @@ namespace ClaySimulation
         
   
         private Material _material;
-        private NativeArray<Octree> _octreeRef;
+        private Octree _octree;
         
         private List<Clay> _particles;
         private NativeArray<Vector3> _particlePositions;
@@ -68,8 +68,7 @@ namespace ClaySimulation
             _particlePositions = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _toMove = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _queryBuffer = new NativeArray<Vector3>(_spawnOnStart, Allocator.Persistent);
-            _octreeRef = new NativeArray<Octree>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _octreeRef[0] = new Octree(_octSettings, _spawnOnStart);
+            _octree = new Octree(_octSettings, _spawnOnStart);
             
             for (int i = 0; i < _particles.Count; i++)
             {
@@ -80,8 +79,7 @@ namespace ClaySimulation
         
         private void OnDestroy()
         {
-            _octreeRef[0].Dispose();
-            _octreeRef.Dispose();
+            _octree.Dispose();
             _queryBuffer.Dispose();
             _particlePositions.Dispose();
             _toMove.Dispose();
@@ -89,37 +87,37 @@ namespace ClaySimulation
 
         private void Update()
         {
-            // ConstructOctree();
+            ConstructOctree();
             CalculateParticleForces();
             MoveParticlesAndRefreshPositions();
         }
 
         void ConstructOctree()
         {
-            // Octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier));
-            //
-            // for (int i = 0; i < _particles.Count; i++)
-            // {
-            //     var p3 =  _particles[i].transform.position;
-            //     Octree.Insert(p3);
-            // }
+            _octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier));
             
-            var constructOctreeJob = new InsertOctreeJob()
+            for (int i = 0; i < _particles.Count; i++)
             {
-                Positions = _particlePositions,
-                AABB = new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier),
-                Octree = _octreeRef
-            };
+                var p3 =  _particles[i].transform.position;
+                _octree.Insert(p3);
+            }
             
-            var job = constructOctreeJob.Schedule();
-            job.Complete();
+            // var constructOctreeJob = new InsertOctreeJob()
+            // {
+            //     Positions = _particlePositions,
+            //     AABB = new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier),
+            //     Octree = _octree
+            // };
+            //
+            // var job = constructOctreeJob.Schedule();
+            // job.Complete();
         }
         
         void CalculateParticleForces()
         {
             var job = new ParticleSimJob()
             {
-                Octree = _octreeRef[0],
+                Octree = _octree,
                 Positions = _particlePositions,
                 ConstMult = _constantMultiplier,
                 DeltaTime = Time.deltaTime,

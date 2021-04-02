@@ -11,10 +11,10 @@ namespace SpatialPartitioning
         
         //todo use lists instead, .Clear() doesn't impose any real perf decreases
         public NativeArray<OctNode> Nodes;
-        public int NodesCount;
+        public NativeReference<int> NodesCount;
         
         public NativeArray<OctValue> Values;
-        public int ValuesCount;
+        public NativeReference<int> ValuesCount;
         
         public OctSettings Settings;
 
@@ -23,17 +23,17 @@ namespace SpatialPartitioning
             Nodes  = new NativeArray<OctNode>(maxParticles/2 + 40, Allocator.Persistent);
             Values = new NativeArray<OctValue>(maxParticles, Allocator.Persistent);
             
-            NodesCount  = 0;
-            ValuesCount = 0;
-            
+            NodesCount = new NativeReference<int>(0, Allocator.Persistent);
+            ValuesCount = new NativeReference<int>(0, Allocator.Persistent);
+
             Settings = settings;
         }
 
         #region construction
         public void CleanAndPrepareForInsertion(AABB aabb)
         {
-            NodesCount  = 1;
-            ValuesCount = 0; //todo make values start at 0 not 1???
+            NodesCount.Value = 1;
+            ValuesCount.Value = 0;
             
             Nodes[0] = new OctNode(aabb);
         }
@@ -44,7 +44,7 @@ namespace SpatialPartitioning
             var root = rootIndex.GetElement(Nodes);
             if (root.PointOverlaps(point))
             {
-                IndexToOctValue valueIndex = IndexToOctValue.NewElement(Values, ref ValuesCount, OctValue.CreateTail(point));
+                IndexToOctValue valueIndex = IndexToOctValue.NewElement(Values, ValuesCount, OctValue.CreateTail(point));
                 InsertPointInNodeOrChildren(rootIndex, valueIndex);
             }
             else
@@ -139,7 +139,7 @@ namespace SpatialPartitioning
         {
             //THE ORDER MATTERS
             //as the order in the array implicit tells the program what octant the child is
-            node.FirstChildIndex = NodesCount;
+            node.FirstChildIndex = NodesCount.Value;
             CreateChildAtOctant(in node, Octant.___);
             CreateChildAtOctant(in node, Octant.X__);
             CreateChildAtOctant(in node, Octant._Y_);
@@ -159,8 +159,8 @@ namespace SpatialPartitioning
 
             var childNode = new OctNode(new AABB(childPos, quarterWidth));
             
-            Nodes[NodesCount] = childNode;
-            NodesCount++;
+            Nodes[NodesCount.Value] = childNode;
+            NodesCount.Value++;
         }
 
         #endregion

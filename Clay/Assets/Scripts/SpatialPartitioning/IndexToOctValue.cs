@@ -16,11 +16,11 @@ namespace SpatialPartitioning
         public IndexToOctValue(int index) => _index = index;
         
         public static IndexToOctValue Empty() => new IndexToOctValue(int.MinValue);
-        public static IndexToOctValue NewElement(NativeArray<OctValue> list, ref int arrayLength, OctValue value)
+        public static IndexToOctValue NewElement(NativeArray<OctValue> list, NativeReference<int> arrayLength, OctValue value)
         {
-            var newIndex = new IndexToOctValue(arrayLength);
-            list[arrayLength] = value;
-            arrayLength++;
+            var newIndex = new IndexToOctValue(arrayLength.Value);
+            list[arrayLength.Value] = value;
+            arrayLength.Value++;
             return newIndex;
         }
 
