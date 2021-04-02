@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using Collision;
-using DefaultNamespace;
+
 using Sirenix.OdinInspector;
 using UnityEngine;
 using SpatialPartitioning;
@@ -43,6 +43,7 @@ namespace ClaySimulation
         private List<Clay> _particles;
         private NativeArray<Vector3> _particlePositions;
         private NativeArray<Vector3> _queryBuffer;
+        private NativeArray<Vector3> _toMove;
 
         #endregion
 
@@ -65,6 +66,7 @@ namespace ClaySimulation
             #endregion
 
             _particlePositions = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _toMove = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
             for (int i = 0; i < _particles.Count; i++)
             {
@@ -81,6 +83,7 @@ namespace ClaySimulation
         {
             Octree.Dispose();
             _queryBuffer.Dispose();
+            _particlePositions.Dispose();
         }
 
         private void Update()
@@ -113,8 +116,9 @@ namespace ClaySimulation
             job.MaxRadius = _minMaxRadius.y;
             job.DesiredPercentBetweenMinMax = _desiredPercentBetweenMinMax;
             job.MaxParticlesToSimulate = _maxParticlesToSimulate;
-            job.ForceMultCurve = new CurveNormalized(_forceMultiplierCurve); //todo cache this value
-            
+            job.ToMove = _toMove;
+            job.Query = _queryBuffer;
+
             var jobHandle = job.Schedule(_particles.Count, 1); //todo increase batch count and measure
             jobHandle.Complete();
             
@@ -122,7 +126,7 @@ namespace ClaySimulation
             for (int i = 0; i < _particles.Count; i++)
             {
                 var pos = _particles[i].transform.position;
-                var newPos = pos + job.ToMove[i];
+                var newPos = pos + _toMove[i];
 
                 _particles[i].RigidBody.MovePosition(newPos);
                 // _particlesToMove[i] = Vector3.zero;
