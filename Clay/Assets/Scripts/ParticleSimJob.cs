@@ -1,9 +1,11 @@
 using System;
 using Collision;
 using SpatialPartitioning;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
+
 
 public struct ParticleSimJob : IJobParallelFor, IDisposable
 {
@@ -45,15 +47,15 @@ public struct ParticleSimJob : IJobParallelFor, IDisposable
             {
                 float percentageBetweenMinMax = Mathf.InverseLerp(MinRadius, MaxRadius, p1P2Dist);
                 float currentToDesiredPercentage = percentageBetweenMinMax - DesiredPercentBetweenMinMax;
-                float desiredDist = Mathf.Lerp(MinRadius, MaxRadius, DesiredPercentBetweenMinMax);
+                // float desiredDist = Mathf.Lerp(MinRadius, MaxRadius, DesiredPercentBetweenMinMax);
                     
-                float indexInCurve;
-                if (p1P2Dist < desiredDist)
-                    indexInCurve = 1; //0, -1
-                else 
-                    indexInCurve = .1f; //0, 1
+                // float indexInCurve;
+                // if (p1P2Dist < desiredDist)
+                //     indexInCurve = 1; //0, -1
+                // else 
+                //     indexInCurve = 1f; //0, 1
                     
-                float scale = currentToDesiredPercentage * ConstMult * indexInCurve * deltaTime;
+                float scale = currentToDesiredPercentage * ConstMult  * deltaTime;
                 Vector3 posToAddScaled = p1ToP2Dir * scale;
                     
                 ToMove[index] += posToAddScaled;
@@ -62,9 +64,7 @@ public struct ParticleSimJob : IJobParallelFor, IDisposable
 
         queryResults.Dispose();
     }
-    
-    
-        
+
     //Query for all points
     //then filter out to get the [maxQuery] closest points to the sphere
     NativeList<Vector3> QueryFiniteByMinDist(Sphere sphere, int maxQuery)

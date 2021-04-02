@@ -90,6 +90,7 @@ namespace ClaySimulation
         {
             ConstructOctree();
             CalculateParticleForces();
+            MoveParticlesAndRefreshPositions();
         }
 
         void ConstructOctree()
@@ -121,19 +122,23 @@ namespace ClaySimulation
 
             var jobHandle = job.Schedule(_particles.Count, 1); //todo increase batch count and measure
             jobHandle.Complete();
-            
-            #region move particles
+
+            job.Dispose();
+        
+        }
+
+        void MoveParticlesAndRefreshPositions()
+        {
             for (int i = 0; i < _particles.Count; i++)
             {
                 var pos = _particles[i].transform.position;
                 var newPos = pos + _toMove[i];
-
-                _particles[i].RigidBody.MovePosition(newPos);
-                // _particlesToMove[i] = Vector3.zero;
+                var rb = _particles[i].RigidBody;
+                
+                rb.MovePosition(newPos);
+                _particlePositions[i] = newPos;
+                _toMove[i] = new Vector3(0,0,0);
             }
-            
-            job.Dispose();
-            #endregion
         }
         
     }

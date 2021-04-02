@@ -481,7 +481,7 @@ MonoBehaviour:
   _maxParticlesToSimulate: 8
   _minMaxRadius: {x: 0.2, y: 0.3}
   _desiredPercentBetweenMinMax: 0.8
-  _constantMultiplier: 0.241
+  _constantMultiplier: 0.063
   _forceMultiplierCurve:
     serializedVersion: 2
     m_Curve:
