@@ -32,10 +32,6 @@ namespace ClaySimulation
         
         [FoldoutGroup("Debug")] public bool DrawParticles;
         [FoldoutGroup("Debug")] public bool DrawOctree;
-        
-        private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
-        private static readonly int PARTICLES_UNIFORM = Shader.PropertyToID("_Particles");
-        
 
         private Octree _octree;
         
@@ -44,14 +40,11 @@ namespace ClaySimulation
         private NativeArray<Vector3> _queryBuffer;
         private NativeArray<Vector3> _toMove;
         private NativeArray<Vector3> _closestSpheres; //will be of stride _maxParticlesToSimulate
-        private NativeArray<int> _closestSpheresCount; 
-        
-
+        private NativeArray<int> _closestSpheresCount;
         #endregion
 
         private void Awake()
         {
-
             #region spawn
             _particles = new List<Clay>(_spawnOnStart);
             var random = Random.CreateFromIndex((uint)DateTime.Now.Millisecond);
@@ -72,8 +65,6 @@ namespace ClaySimulation
 
             _particlePositions = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent);
             _toMove = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent);
-            _toMove = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent);
-            _queryBuffer = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent);
             _closestSpheres = new NativeArray<Vector3>(_particles.Count * _maxParticlesToSimulate, Allocator.Persistent);
             _closestSpheresCount = new NativeArray<int>(_particles.Count, Allocator.Persistent);
             
@@ -91,6 +82,8 @@ namespace ClaySimulation
             _octree.Dispose();
             _queryBuffer.Dispose();
             _particlePositions.Dispose();
+            _closestSpheres.Dispose();
+            _closestSpheresCount.Dispose();
             _toMove.Dispose();
         }
 
@@ -108,10 +101,7 @@ namespace ClaySimulation
             var octConstructJob = _octree.CreateConstructJob(_particlePositions, aabb);
 
             var job = octConstructJob.Schedule();
-            
             job.Complete();
- 
-  
         }
         
         void CalculateParticleForces()
@@ -130,16 +120,12 @@ namespace ClaySimulation
                 //out
                 
                 ToMove = _toMove,
-                Query = _queryBuffer,
                 ClosestSpheres = _closestSpheres,
                 ClosestSpheresCount = _closestSpheresCount
             };
 
-            
             var jobHandle = job.Schedule(_particles.Count, 1); //todo increase batch count and measure
-            
             jobHandle.Complete();
-     
         }
 
         void MoveParticlesAndRefreshPositions()
@@ -168,6 +154,8 @@ namespace ClaySimulation
                     int index = j + (i * _maxParticlesToSimulate);
                     p.ParticlePositions[j] = _closestSpheres[index];
                 }
+                
+                p.SetMaterial();
             }
         }
         

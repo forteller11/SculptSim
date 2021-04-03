@@ -20,12 +20,9 @@ namespace ClaySimulation
         public float DesiredPercentBetweenMinMax;
         public int MaxParticlesToSimulate;
         public float DeltaTime;
-        
-        //todo buffers (allocate in job maybe?? --> it gets copied anyways I think, mem copy is slower?? )
-        public NativeArray<Vector3> Query;
-        
+
         //outputs
-        [WriteOnly] public NativeArray<Vector3> ClosestSpheres;
+        [NativeDisableParallelForRestriction] [WriteOnly] public NativeArray<Vector3> ClosestSpheres;
         [WriteOnly] public NativeArray<int> ClosestSpheresCount;
         public NativeArray<Vector3> ToMove;
 
@@ -76,7 +73,10 @@ namespace ClaySimulation
                     ToMove[index] += posToAddScaled;
                 
             }
+
+            queryResults.Dispose();
             
+
             #endregion
         }
         
@@ -94,14 +94,14 @@ namespace ClaySimulation
 
             float maxDistOfSphereSqrd = sphere.Radius * sphere.Radius;
 
-            //Query = new NativeArray<Vector3>(Positions.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-            int resultsCount = Octree.QueryNonAlloc(sphere, Query);
+            var queryBuffer = new NativeArray<Vector3>(Positions.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            int resultsCount = Octree.QueryNonAlloc(sphere, queryBuffer);
 
 
             for (int i = 0; i < resultsCount; i++)
             {
 
-                var currentQuery = Query[i];
+                var currentQuery = queryBuffer[i];
                 var distSqr = Vector3.SqrMagnitude(currentQuery - sphere.Position);
 
                 //if the same particle (the same pos), or if outside max range, continue
