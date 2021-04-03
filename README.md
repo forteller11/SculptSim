@@ -31,12 +31,14 @@ Render the particles uniformly using a Ray Marching, smoothed signed distance fi
 
 
 ###### Future improvements or alternative solutions
-- compute shader > jobs multithreading
+- compute shader instead of jobs multithreading
 - only update particles which have moved recently, have octree persist between frames
 - Eulerian simulation > Lagragian
+    - only use particles for rendering (raymarching)
 - don't render via SDF and raymarching --> use a sort of screen-based blurring effect of the particles
-  - render each particles as a 2D blurred thing
+  - render each particles as a 2D blurred thing to an offscreen texture
   - metaball/threshold the thing in 2D
+  - blit back to main render texture
 
 
 
