@@ -473,7 +473,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _particlePrefab: {fileID: 1533876711183798372, guid: abfd8889d7f4f914e9c47fac2b7d94c2, type: 3}
   _spawnOnStart: 600
-  _radiusToSpawnIn: 1.5
+  _radiusToSpawnIn: 5
   _octSettings:
     MaxValuesPerNode: 16
     MinHalfSize: 0.3

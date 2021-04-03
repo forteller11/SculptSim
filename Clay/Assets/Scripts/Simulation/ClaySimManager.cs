@@ -1,13 +1,13 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using Collision;
-
 using Sirenix.OdinInspector;
 using UnityEngine;
 using SpatialPartitioning;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
+using AABB = Collision.AABB;
 using Random = Unity.Mathematics.Random;
 
 
@@ -36,39 +36,48 @@ namespace ClaySimulation
         private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
         private static readonly int PARTICLES_UNIFORM = Shader.PropertyToID("_Particles");
         
-  
-        private Material _material;
+
         private Octree _octree;
         
         private List<Clay> _particles;
         private NativeArray<Vector3> _particlePositions;
         private NativeArray<Vector3> _queryBuffer;
         private NativeArray<Vector3> _toMove;
+        private NativeArray<Vector3> _closestSpheres; //will be of stride _maxParticlesToSimulate
+        private NativeArray<int> _closestSpheresCount; 
+        
 
         #endregion
 
         private void Awake()
         {
-            _material = GetComponent<MeshRenderer>().material;
-            
+
             #region spawn
             _particles = new List<Clay>(_spawnOnStart);
-            var random = Random.CreateFromIndex((uint)System.DateTime.Now.Millisecond);
+            var random = Random.CreateFromIndex((uint)DateTime.Now.Millisecond);
+            
             for (int i = 0; i < _spawnOnStart; i++)
             {
                 var newParticle = Instantiate(_particlePrefab);
+                    
                 var randomOutput = (Vector3) random.NextFloat3() - new Vector3(0.5f, 0.5f, 0.5f);
                 var startingPos = randomOutput * _radiusToSpawnIn;
                 newParticle.transform.position = startingPos + transform.position;
+                
+                newParticle.ParticlePositions = new Vector4[_maxParticlesToSimulate];
                 
                 _particles.Add(newParticle);
             }
             #endregion
 
-            _particlePositions = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _toMove = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _queryBuffer = new NativeArray<Vector3>(_spawnOnStart, Allocator.Persistent);
-            _octree = new Octree(_octSettings, _spawnOnStart);
+            _particlePositions = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent);
+            _toMove = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent);
+            _toMove = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent);
+            _queryBuffer = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent);
+            _closestSpheres = new NativeArray<Vector3>(_particles.Count * _maxParticlesToSimulate, Allocator.Persistent);
+            _closestSpheresCount = new NativeArray<int>(_particles.Count, Allocator.Persistent);
+            
+            _octree = new Octree(_octSettings, _particles.Count);
             
             for (int i = 0; i < _particles.Count; i++)
             {
@@ -90,6 +99,7 @@ namespace ClaySimulation
             ConstructOctree();
             CalculateParticleForces();
             MoveParticlesAndRefreshPositions();
+            SetParticleMaterials();
         }
 
         void ConstructOctree()
@@ -100,14 +110,7 @@ namespace ClaySimulation
             var job = octConstructJob.Schedule();
             
             job.Complete();
-            
-            // _octree.CleanAndPrepareForInsertion(new AABB(transform.position, _radiusToSpawnIn * _octreeRadiusMultiplier));
-            //
-            // for (int i = 0; i < _particles.Count; i++)
-            // {
-            //     var p3 =  _particles[i].transform.position;
-            //     _octree.Insert(p3);
-            // }
+ 
   
         }
         
@@ -115,6 +118,7 @@ namespace ClaySimulation
         {
             var job = new ParticleSimJob()
             {
+                //in
                 Octree = _octree,
                 Positions = _particlePositions,
                 ConstMult = _constantMultiplier,
@@ -123,8 +127,12 @@ namespace ClaySimulation
                 MaxRadius = _minMaxRadius.y,
                 DesiredPercentBetweenMinMax = _desiredPercentBetweenMinMax,
                 MaxParticlesToSimulate = _maxParticlesToSimulate,
+                //out
+                
                 ToMove = _toMove,
-                Query = _queryBuffer
+                Query = _queryBuffer,
+                ClosestSpheres = _closestSpheres,
+                ClosestSpheresCount = _closestSpheresCount
             };
 
             
@@ -147,6 +155,23 @@ namespace ClaySimulation
                 _toMove[i] = new Vector3(0,0,0);
             }
         }
+
+        void SetParticleMaterials()
+        {
+            for (int i = 0; i < _particles.Count; i++)
+            {
+                var p = _particles[i];
+                p.ParticleLength = _closestSpheresCount[i];
+
+                for (int j = 0; j < _maxParticlesToSimulate; j++)
+                {
+                    int index = j + (i * _maxParticlesToSimulate);
+                    p.ParticlePositions[j] = _closestSpheres[index];
+                }
+            }
+        }
+        
+        
         
     }
 }

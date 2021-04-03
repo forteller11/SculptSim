@@ -11,22 +11,22 @@ namespace ClaySimulation
     [BurstCompile]
     public struct ParticleSimJob : IJobParallelFor
     {
-        #region inputs
-
+        //inputs
         [ReadOnly] public Octree Octree;
         [ReadOnly] public NativeArray<Vector3> Positions;
-
-        public NativeArray<Vector3> Query;
-
         public float ConstMult;
         public float MinRadius;
         public float MaxRadius;
         public float DesiredPercentBetweenMinMax;
         public int MaxParticlesToSimulate;
         public float DeltaTime;
-
-        #endregion
-
+        
+        //todo buffers (allocate in job maybe?? --> it gets copied anyways I think, mem copy is slower?? )
+        public NativeArray<Vector3> Query;
+        
+        //outputs
+        [WriteOnly] public NativeArray<Vector3> ClosestSpheres;
+        [WriteOnly] public NativeArray<int> ClosestSpheresCount;
         public NativeArray<Vector3> ToMove;
 
         public void Execute(int index)
@@ -38,7 +38,18 @@ namespace ClaySimulation
             var p1Pos = Positions[index];
             var querySphere = new Sphere(p1Pos, MaxRadius);
             var queryResults = QueryFiniteByMinDist(querySphere, MaxParticlesToSimulate);
-
+            
+            #region closest spheres
+            for (int j = 0; j < queryResults.Length; j++)
+            {
+                int closestIndex = j + (index * MaxParticlesToSimulate);
+                ClosestSpheres[closestIndex] = queryResults[j];
+            }
+            
+            ClosestSpheresCount[index] = queryResults.Length;
+            #endregion
+            
+            #region sim forces
             for (int j = 0; j < queryResults.Length; j++)
             {
                 var p2Pos = queryResults[j];
@@ -47,8 +58,7 @@ namespace ClaySimulation
                 float p1P2Dist = p1ToP2.magnitude;
                 Vector3 p1ToP2Dir = p1ToP2 / p1P2Dist;
 
-                if (p1P2Dist < MaxRadius)
-                {
+                
                     float percentageBetweenMinMax = Mathf.InverseLerp(MinRadius, MaxRadius, p1P2Dist);
                     float currentToDesiredPercentage = percentageBetweenMinMax - DesiredPercentBetweenMinMax;
                     // float desiredDist = Mathf.Lerp(MinRadius, MaxRadius, DesiredPercentBetweenMinMax);
@@ -59,15 +69,18 @@ namespace ClaySimulation
                     // else 
                     //     indexInCurve = 1f; //0, 1
 
+                    
                     float scale = currentToDesiredPercentage * ConstMult * deltaTime;
                     Vector3 posToAddScaled = p1ToP2Dir * scale;
 
                     ToMove[index] += posToAddScaled;
-                }
+                
             }
-
-            queryResults.Dispose();
+            
+            #endregion
         }
+        
+        
 
         //Query for all points
         //then filter out to get the [maxQuery] closest points to the sphere
@@ -81,7 +94,7 @@ namespace ClaySimulation
 
             float maxDistOfSphereSqrd = sphere.Radius * sphere.Radius;
 
-            Query = new NativeArray<Vector3>(Positions.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            //Query = new NativeArray<Vector3>(Positions.Length, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             int resultsCount = Octree.QueryNonAlloc(sphere, Query);
 
 
