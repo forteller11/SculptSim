@@ -37,7 +37,6 @@ namespace ClaySimulation
         
         private List<Clay> _particles;
         private NativeArray<Vector3> _particlePositions;
-        private NativeArray<Vector3> _queryBuffer;
         private NativeArray<Vector3> _toMove;
         private NativeArray<Vector3> _closestSpheres; //will be of stride _maxParticlesToSimulate
         private NativeArray<int> _closestSpheresCount;
@@ -80,7 +79,6 @@ namespace ClaySimulation
         private void OnDestroy()
         {
             _octree.Dispose();
-            _queryBuffer.Dispose();
             _particlePositions.Dispose();
             _closestSpheres.Dispose();
             _closestSpheresCount.Dispose();

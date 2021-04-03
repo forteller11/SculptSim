@@ -14,18 +14,20 @@ namespace ClaySimulation
         private static readonly int PARTICLES_UNIFORM = Shader.PropertyToID("_Particles");
         
         [Required] public Rigidbody RigidBody;
-        [Required] public Material Material;
+        [HideInInspector] public Material Material;
 
         public Vector4 [] ParticlePositions;
         public int ParticleLength;
+
+        private void Awake()
+        {
+            Material = GetComponent<MeshRenderer>().material;
+        }
 
         public void SetMaterial()
         {
             Material.SetVectorArray(PARTICLES_UNIFORM, ParticlePositions);
             Material.SetInt(PARTICLES_LENGTH_UNIFORM, ParticleLength);
         }
-        
-        
-
     }
 }

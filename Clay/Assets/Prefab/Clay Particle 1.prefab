@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 1533876711183798372}
   - component: {fileID: 7098548470907503630}
   m_Layer: 6
-  m_Name: Clay Particle
+  m_Name: Clay Particle 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -111,6 +111,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   RigidBody: {fileID: 7098548470907503630}
+  Material: {fileID: 2100000, guid: a0d6d3100e440054494cc20bb7e862b2, type: 2}
+  ParticlePositions: []
+  ParticleLength: 0
 --- !u!54 &7098548470907503630
 Rigidbody:
   m_ObjectHideFlags: 0

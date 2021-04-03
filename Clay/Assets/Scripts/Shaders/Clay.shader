@@ -1,11 +1,11 @@
-Shader "Unlit/Clay"
+Shader "Unlit/RaymarchingIndividual"
 {
     Properties
     {
         _MainTex ("Texture", 2D) = "white" {}
         _MinDistance  ("Min Distance Until Considered Hit", Float) = .1
         _ParticleRadius  ("Particle Visual Radius", Float) = 2
-        //[PerRendererData] _Color ("Color", Color) = (1,1,1,1)
+        _SmoothingFactor  ("Particle Visual Radius", Float) = .1
     }
     SubShader
     {
@@ -42,11 +42,16 @@ Shader "Unlit/Clay"
                 return o;
             }
       
-   
+
+            // polynomial smooth min (k = 0.1);
+            float smin( float a, float b, float k )
+            {
+                float h = clamp( 0.5+0.5*(b-a)/k, 0.0, 1.0 );
+                return lerp( b, a, h ) - k*h*(1.0-h);
+            }
 
             float signedDistToSphere(float3 position, float3 spherePosition, float sphereRadius)
             {
-                //use dist squared?
                 const float signedDistance = distance(position, spherePosition) - sphereRadius;
                 return signedDistance;
             }
@@ -56,6 +61,8 @@ Shader "Unlit/Clay"
             float4 _Particles[5]; //where xyz == pos
             float _MinDistance;
             float _ParticleRadius;
+            float _SmoothingFactor;
+
 
             float signedDistToScene(float3 position)
             {
@@ -63,7 +70,7 @@ Shader "Unlit/Clay"
                 for (int i = 0; i < _ParticlesLength; i++)
                 {
                     float currentDist = signedDistToSphere(position, _Particles[i].xyz, _ParticleRadius);
-                    minDist = min(minDist, currentDist);
+                    minDist = smin(minDist, currentDist, _SmoothingFactor);
                 }
 
                 return minDist;
@@ -78,6 +85,8 @@ Shader "Unlit/Clay"
                     signedDistToScene(float3(p.x, p.y, p.z + EPISILON)) - signedDistToScene(float3(p.x, p.y, p.z - EPISILON))
                 ));
             }
+
+            
             
             fixed4 frag (v2f input) : SV_Target
             {
@@ -86,7 +95,7 @@ Shader "Unlit/Clay"
                 float3 rayPos = input.worldPos;
                 float3 rayDir = normalize(rayPos - _WorldSpaceCameraPos);
 
-                for (int i = 0; i < 100; i++)
+                for (int i = 0; i < 500; i++)
                 {
                     const float minDistanceToScene = signedDistToScene(rayPos);
                     
@@ -104,9 +113,7 @@ Shader "Unlit/Clay"
                 return fixed4(0,0,0,0);
              
             }
-            
 
-            
             ENDCG
         }
     }

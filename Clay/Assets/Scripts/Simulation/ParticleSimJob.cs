@@ -3,6 +3,7 @@ using Collision;
 using SpatialPartitioning;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using UnityEngine;
 
@@ -22,8 +23,8 @@ namespace ClaySimulation
         public float DeltaTime;
 
         //outputs
-        [NativeDisableParallelForRestriction] [WriteOnly] public NativeArray<Vector3> ClosestSpheres;
-        [WriteOnly] public NativeArray<int> ClosestSpheresCount;
+        [NativeDisableContainerSafetyRestriction] [NativeDisableParallelForRestriction] [WriteOnly] public NativeArray<Vector3> ClosestSpheres;
+        public NativeArray<int> ClosestSpheresCount;
         public NativeArray<Vector3> ToMove;
 
         public void Execute(int index)
