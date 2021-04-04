@@ -43,6 +43,7 @@ Render the particles uniformly using a Ray Marching, smoothed signed distance fi
       - subdivide octree prematuralelytively/predic so that values aren't redistrbuted as much
       - use a spatial hash function to place values
   - avoid performing sphere/collisions tests on query by allowing the insertion of points (spheres) into multiple octants.
+  - only store octnode value count on insertion, not on querying (smaller struct, less cache misses)
 
 
 
