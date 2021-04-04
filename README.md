@@ -39,6 +39,10 @@ Render the particles uniformly using a Ray Marching, smoothed signed distance fi
   - render each particles as a 2D blurred thing to an offscreen texture
   - metaball/threshold the thing in 2D
   - blit back to main render texture
+  - improve data locality of inserted points
+      - subdivide octree prematuralelytively/predic so that values aren't redistrbuted as much
+      - use a spatial hash function to place values
+  - avoid performing sphere/collisions tests on query by allowing the insertion of points (spheres) into multiple octants.
 
 
 
