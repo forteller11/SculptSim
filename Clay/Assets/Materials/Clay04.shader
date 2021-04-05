@@ -2,10 +2,9 @@ Shader "Unlit/Clay04"
 {
     Properties
     {
-        _MainTex ("Texture", 2D) = "white" {}
         _MinDistance  ("Min Distance Until Considered Hit", Float) = .1
         _ParticleRadius  ("Particle Visual Radius", Float) = 2
-        _SmoothingFactor  ("Particle Visual Radius", Float) = .1
+        _SmoothingFactor  ("Particle Smoothing", Float) = .1
     }
     SubShader
     {
@@ -56,7 +55,7 @@ Shader "Unlit/Clay04"
                 return signedDistance;
             }
            
-
+            
             int _ParticlesLength;
             float4 _Particles[5]; //where xyz == pos
             float _MinDistance;

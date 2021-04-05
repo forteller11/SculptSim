@@ -74,7 +74,7 @@ namespace ClaySimulation
                 _particlePositions[i] = _particles[i].transform.position;
             }
 
-            _materialSender = new ClayMaterialSender(GetComponent<Material>(), _particles.Count, _octree);
+            _materialSender = new ClayMaterialSender(GetComponent<MeshRenderer>().material, _particles.Count, _octree);
         }
 
         private void Update()
@@ -144,6 +144,7 @@ namespace ClaySimulation
         {
             _octree.Dispose();
             _particlePositions.Dispose();
+            _particlePositionsToShader.Dispose();
             _closestSpheres.Dispose();
             _closestSpheresCount.Dispose();
             _toMove.Dispose();

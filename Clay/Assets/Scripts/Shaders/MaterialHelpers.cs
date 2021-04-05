@@ -11,7 +11,7 @@ namespace ClaySimulation.Shaders
         private Vector4 [] _octValuesBuffer;
         private Material _material;
         
-        // private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
+         private static readonly int PARTICLES_LENGTH_UNIFORM = Shader.PropertyToID("_ParticlesLength");
         private static readonly int PARTICLES_UNIFORM = Shader.PropertyToID("_Particles");
         private static readonly int OCTNODES_UNIFORM = Shader.PropertyToID("_OctNodes");
         private static readonly int OCTVALUES_UNIFORM = Shader.PropertyToID("_OctValues");
@@ -31,6 +31,7 @@ namespace ClaySimulation.Shaders
 
             var mat = _material;
             mat.SetVectorArray(PARTICLES_UNIFORM, _positionsBuffer);
+            mat.SetInt(PARTICLES_LENGTH_UNIFORM, _positionsBuffer.Length);
             mat.SetMatrixArray(OCTNODES_UNIFORM, _octNodesBuffer);
             mat.SetVectorArray(OCTVALUES_UNIFORM, _octValuesBuffer);
         }

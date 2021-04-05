@@ -341,7 +341,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7732577}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.543}
+  m_LocalPosition: {x: 0, y: -2.48, z: 1.543}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
@@ -471,9 +471,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c029fb992b0c4ce9b35b5728e76c9da6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _particlePrefab: {fileID: 1533876711183798372, guid: abfd8889d7f4f914e9c47fac2b7d94c2, type: 3}
-  _spawnOnStart: 600
-  _radiusToSpawnIn: 5
+  _particlePrefab: {fileID: 1533876711183798372, guid: 349a1a88d8855f444be31c599a50d5ad, type: 3}
+  _spawnOnStart: 10
+  _radiusToSpawnIn: 2
   _octSettings:
     MaxValuesPerNode: 16
     MinHalfSize: 0.3
@@ -482,39 +482,6 @@ MonoBehaviour:
   _minMaxRadius: {x: 0.2, y: 0.3}
   _desiredPercentBetweenMinMax: 0.8
   _constantMultiplier: 0.11
-  _forceMultiplierCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: -1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 0.0015869141
-      value: 0.4929657
-      inSlope: 0.055370156
-      outSlope: 0.055370156
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0.11330772
-    - serializedVersion: 3
-      time: 0.9435153
-      value: 0.033888742
-      inSlope: -1.3685352
-      outSlope: -1.3685352
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0.09996028
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
   DrawParticles: 0
   DrawOctree: 1
 --- !u!4 &789098179
@@ -525,8 +492,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 789098177}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0.178}
-  m_LocalScale: {x: 2, y: 2, z: 2}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 4, y: 4, z: 4}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 4
@@ -546,7 +513,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 789098177}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
