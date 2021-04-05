@@ -28,19 +28,17 @@ namespace ClaySimulation
         [FoldoutGroup("Sim Settings")] [SerializeField] [MinMaxSlider(0,4, ShowFields = true)] Vector2 _minMaxRadius = new Vector2(0.2f,0.3f);
         [FoldoutGroup("Sim Settings")] [SerializeField] float _desiredPercentBetweenMinMax = .5f;
         [FoldoutGroup("Sim Settings")] [SerializeField] [Range(0,1)] private float  _constantMultiplier = .05f;
-        [Tooltip("x== 0 means at desired percent, -1 == at min, 1 == at max")] 
-        [FoldoutGroup("Sim Settings")] [SerializeField] AnimationCurve _forceMultiplierCurve = new AnimationCurve(new Keyframe(-1, 1), new Keyframe(0, 0), new Keyframe(1, 1));
-        
+
         [FoldoutGroup("Debug")] public bool DrawParticles;
         [FoldoutGroup("Debug")] public bool DrawOctree;
 
         private Octree _octree;
         private List<Clay> _particles;
         private NativeArray<Vector3> _particlePositions;
+        private NativeArray<Vector4> _particlePositionsToShader;
         private NativeArray<Vector3> _toMove;
         private NativeArray<Vector3> _closestSpheres; //will be of stride _maxParticlesToSimulate
         private NativeArray<int> _closestSpheresCount;
-        private Vector4 [] _particlePositionsShader;
 
         private ClayMaterialSender _materialSender;
         #endregion
@@ -66,6 +64,7 @@ namespace ClaySimulation
             
             _octree = new Octree(_octSettings, _particles.Count);
             _particlePositions = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent);
+            _particlePositionsToShader = new NativeArray<Vector4>(_particles.Count, Allocator.Persistent);
             _toMove = new NativeArray<Vector3>(_particles.Count, Allocator.Persistent);
             _closestSpheres = new NativeArray<Vector3>(_particles.Count * _maxParticlesToSimulate, Allocator.Persistent);
             _closestSpheresCount = new NativeArray<int>(_particles.Count, Allocator.Persistent);
@@ -75,8 +74,7 @@ namespace ClaySimulation
                 _particlePositions[i] = _particles[i].transform.position;
             }
 
-            _materialSender = new ClayMaterialSender(GetComponent<Material>(), _particles.Count, _octree)
-            _particlePositionsShader = new Vector4[_particles.Count];
+            _materialSender = new ClayMaterialSender(GetComponent<Material>(), _particles.Count, _octree);
         }
 
         private void Update()
@@ -84,7 +82,7 @@ namespace ClaySimulation
             ConstructOctree();
             CalculateParticleForces();
             MoveParticlesAndRefreshPositions();
-            SetParticleMaterials();
+            SendToShader();
         }
 
         void ConstructOctree()
@@ -134,20 +132,14 @@ namespace ClaySimulation
             }
         }
 
-        void SetParticleMaterials()
+        void SendToShader()
         {
             for (int i = 0; i < _particlePositions.Length; i++)
-            {
-                var p = _particlePositions[i];
-                _particlePositionsShader[i] = new Vector4(p.x, p.y, p.z, 0);
-            }
+                _particlePositionsToShader[i] = _particlePositions[i];
             
-            _material.SetVectorArray(PARTICLES_UNIFORM, _particlePositionsShader);
-            _material.SetVectorArray(PARTICLES_UNIFORM, _particlePositionsShader);
-            _material.SetVectorArray(PARTICLES_UNIFORM, _particlePositionsShader);
-            _material.SetInt(PARTICLES_LENGTH_UNIFORM, _particlePositionsShader.Length);
+            _materialSender.SendClayMaterialData(_particlePositionsToShader, _octree);
         }
-        
+
         private void OnDestroy()
         {
             _octree.Dispose();
