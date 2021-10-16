@@ -8,6 +8,7 @@ using SpatialPartitioning;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using UnityEditor.Experimental.GraphView;
 using AABB = Collision.AABB;
 using Random = Unity.Mathematics.Random;
 
@@ -31,6 +32,8 @@ namespace ClaySimulation
 
         [FoldoutGroup("Debug")] public bool DrawParticles;
         [FoldoutGroup("Debug")] public bool DrawOctree;
+        [FoldoutGroup("Debug")] public float _gizmosReduced = .98f;
+        [FoldoutGroup("Debug")] public float _alphaGizmo = .1f;
 
         private Octree _octree;
         private List<Clay> _particles;
@@ -82,7 +85,7 @@ namespace ClaySimulation
             ConstructOctree();
             CalculateParticleForces();
             MoveParticlesAndRefreshPositions();
-            SendToShader();
+            // SendToShader();
         }
 
         void ConstructOctree()
@@ -149,6 +152,26 @@ namespace ClaySimulation
             _closestSpheresCount.Dispose();
             _toMove.Dispose();
         }
-        
+
+        private void OnDrawGizmos()
+        {
+
+            for (int i = 0; i < _octree.Nodes.Length; i++)
+            {
+                var node = _octree.Nodes[i];
+                var center = node.AABB.Center;
+                var ran = Random.CreateFromIndex((uint)center.GetHashCode());
+             
+                var size = node.AABB.HalfWidth * _gizmosReduced * 2;
+                float alpha = 1-Mathf.InverseLerp(_octSettings.MinHalfSize, _radiusToSpawnIn*_octreeRadiusMultiplier, node.AABB.HalfWidth);
+                Gizmos.color = RanColor(ref ran, alpha);
+                Gizmos.DrawCube(center, new Vector3(size, size, size));
+            }
+        }
+
+        private Color RanColor(ref Random ran, float alpha)
+        {
+            return new Color(ran.NextFloat(0, 1), ran.NextFloat(0, 1), ran.NextFloat(0, 1), alpha);
+        }
     }
 }
