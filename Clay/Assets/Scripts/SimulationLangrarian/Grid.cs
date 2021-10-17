@@ -8,7 +8,7 @@ namespace Fort.EulerSim
     public class Grid
     {
         [SerializeField] public float2 _origin = float2.zero;
-        [SerializeField] public int3 _dimensions = new int3(8, 8, 8);
+        [SerializeField] public int2 _dimensions = new int2(8, 8);
         [SerializeField] public float2 _cellSize = new float2(1, 1);
 
         public Cell[,] _cells;

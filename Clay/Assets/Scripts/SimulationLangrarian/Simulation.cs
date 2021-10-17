@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using ClaySimulation.Utils;
 using Shapes;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Fort.EulerSim
 {
@@ -66,16 +68,29 @@ namespace Fort.EulerSim
 
         public override void DrawShapes(Camera cam)
         {
+            Draw.Matrix = Matrix4x4.identity;
+            Draw.BlendMode = ShapesBlendMode.Opaque;
+            
             for (int i = 0; i < _grid._cells.GetLength(0); i++)
             {
                 for (int j = 0; j < _grid._cells.GetLength(1); j++)
                 {
                     var cell = _grid._cells[i, j];
                     var worldPos = _grid.IndexToWorldPosition(new int2(i, j));
-                    var rect = new Rect(worldPos, _grid._origin);
-                    
-                    Draw.Rectangle(rect, cell.Color);
+                    var rect = new Rect(worldPos + _grid._origin, _grid._cellSize*100);
+
+                    Draw.SizeSpace = ThicknessSpace.Noots;
+                    Draw.Thickness = 10;
+                    Draw.Color = cell.Color.WithAlpha(1);
+                    Draw.Rectangle(rect);
                 }
+            }
+
+            for (int i = 0; i < _particles.Count; i++)
+            {
+                var part = _particles[i];
+                
+                Draw.Sphere(new float3(part.Position, 0), part.Mass, part.Color);
             }
         }
     }
