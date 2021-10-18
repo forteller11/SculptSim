@@ -24,7 +24,7 @@ namespace Fort.EulerSim
             float weight = (float) 1 / ParticlesInCell;
             
             Color = Color.LerpUnclamped(Color, particle.Color, weight);
-            Density = math.lerp(Density, particle.Mass, weight);
+            Density += particle.Mass;
             CenterOfDensity = math.lerp(CenterOfDensity, particle.Position, weight);
         }
 

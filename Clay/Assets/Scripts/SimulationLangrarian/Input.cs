@@ -18,7 +18,8 @@ namespace Fort.EulerSim
 
         private void Update()
         {
-            if (!Keyboard.current.spaceKey.isPressed) 
+            if (!Keyboard.current.spaceKey.wasPressedThisFrame &&
+                !Keyboard.current.leftAltKey.isPressed) 
                 return;
             
             var mousePos = Mouse.current.position.ReadValue();
@@ -34,7 +35,7 @@ namespace Fort.EulerSim
                 Position = new float2(worldPoint.x, worldPoint.y),
                 Color = _random.NextColor(), 
                 Mass = 1,
-                Velocity = _random.NextFloat2Direction()
+                Velocity = float2.zero
             };
 
             _simulation.AddParticle(particle);

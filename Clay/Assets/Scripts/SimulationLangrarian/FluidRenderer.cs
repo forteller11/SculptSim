@@ -21,11 +21,11 @@ namespace Fort.EulerSim
                 Draw.BlendMode = ShapesBlendMode.Opaque;
 
                 var grid = _simulation.Grid;
-                for (int i = 0; i < grid._cells.GetLength(0); i++)
+                for (int i = 0; i < grid.Cells.GetLength(0); i++)
                 {
-                    for (int j = 0; j < grid._cells.GetLength(1); j++)
+                    for (int j = 0; j < grid.Cells.GetLength(1); j++)
                     {
-                        var cell = grid._cells[i, j];
+                        var cell = grid.Cells[i, j];
                         var worldPos = grid.WorldPositionFromIndex(new int2(i, j));
                         var rect = new Rect(worldPos + grid._origin, grid._cellSize - GridLineSpaceThickness);
                         

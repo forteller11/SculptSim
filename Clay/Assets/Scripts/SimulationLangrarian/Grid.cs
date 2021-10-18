@@ -13,27 +13,27 @@ namespace Fort.EulerSim
         [SerializeField] public int2 _dimensions = new int2(8, 8);
         [SerializeField] public float2 _cellSize = new float2(1, 1);
 
-        public Cell[,] _cells;
+        public Cell[,] Cells;
         
         public void Init()
         {
-            _cells = new Cell[_dimensions.x, _dimensions.y];
+            Cells = new Cell[_dimensions.x, _dimensions.y];
             
             Reset();
         }
 
         public void Reset()
         {
-            int xLength = _cells.GetLength(0);
-            int yLength = _cells.GetLength(1);
+            int xLength = Cells.GetLength(0);
+            int yLength = Cells.GetLength(1);
             for (int i = 0; i < xLength; i++)
             {
                 for (int j = 0; j < yLength; j++)
                 {
-                    var cell = _cells[i, j];
+                    var cell = Cells[i, j];
                     
                     cell.Reset();
-                    _cells[i, j] = cell;
+                    Cells[i, j] = cell;
                 }
             }
         }
@@ -48,7 +48,7 @@ namespace Fort.EulerSim
             {
                 return;
             }
-            _cells[cellIndex.x, cellIndex.y].AddParticle(particle);
+            Cells[cellIndex.x, cellIndex.y].AddParticle(particle);
         }
         
         public int2 CellIndexFromWorldPosition(float2 worldPosition)
@@ -56,6 +56,13 @@ namespace Fort.EulerSim
             float2 localGridPos = worldPosition - _origin;
             int2 index = (int2) (localGridPos / _cellSize);
             return index;
+        }
+        
+        public int2 CellIndexFromWorldClamped(float2 worldPosition)
+        {
+            int2 index = CellIndexFromWorldPosition(worldPosition);
+            int2 indexClamped = math.clamp(index, int2.zero, _dimensions - new int2(1,1));
+            return indexClamped;
         }
 
         public float2 WorldPositionFromIndex(int2 index)
