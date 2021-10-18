@@ -1,6 +1,8 @@
 using System;
 using Unity.Mathematics;
+using UnityEditor;
 using UnityEngine;
+using MathUtils = ClaySimulation.Utils.MathUtils;
 
 namespace Fort.EulerSim
 {
@@ -39,30 +41,37 @@ namespace Fort.EulerSim
         public void AddParticleToSim(in Particle particle)
         {
             int2 cellIndex = CellIndexFromWorldPosition(particle.Position);
+            if (cellIndex.x >= _dimensions.x || 
+                cellIndex.y >= _dimensions.y ||
+                cellIndex.x < 0 ||
+                cellIndex.y < 0)
+            {
+                return;
+            }
             _cells[cellIndex.x, cellIndex.y].AddParticle(particle);
-            //todo does this work
         }
         
         public int2 CellIndexFromWorldPosition(float2 worldPosition)
         {
-            int xIndex = (int) (worldPosition.x % _cellSize.x);
-            int yIndex = (int) (worldPosition.y % _cellSize.y);
-            return new int2(xIndex, yIndex);
+            float2 localGridPos = worldPosition - _origin;
+            int2 index = (int2) (localGridPos / _cellSize);
+            return index;
         }
 
-        public float2 IndexToWorldPosition(int2 cellIndex)
+        public float2 WorldPositionFromIndex(int2 index)
         {
-            float2 result = (cellIndex * _cellSize) + _origin;
-            return result;
+            return (index * _cellSize) + _origin;
         }
-        
-        public float2 WorldPositionToLocalPosition(float2 worldPosition)
-        {
-            int2 cellIndex = CellIndexFromWorldPosition(worldPosition);
-            float2 worldPositionCell = IndexToWorldPosition(cellIndex);
-            float2 localCellPosition = worldPositionCell - worldPosition;
 
-            return localCellPosition;
+        public float2 WorldToLocalCellPosition(float2 worldPosition)
+        {
+            float2 localCell = worldPosition % _cellSize;
+            return localCell;
+        }
+
+        public Rect GetWorldBounds()
+        {
+            return new Rect(_origin, (Vector2)(_cellSize * _dimensions));
         }
         
     }

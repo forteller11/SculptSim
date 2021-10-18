@@ -258,7 +258,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   useCullingMasks: 0
   _simulation: {fileID: 341099788}
-  GridLineThickness: 0.1
+  GridLineThickness: 0.05
+  GridLineSpaceThickness: 0.01
   ParticleRadius: 0.1
 --- !u!4 &1042895496
 Transform:

@@ -44,7 +44,8 @@ namespace Fort.EulerSim
             for (int i = 0; i < Particles.Count; i++)
             {
                 var particle = Particles[i];
-                float2 localPos = Grid.WorldPositionToLocalPosition(particle.Position);
+                //todo wrap particle position
+                float2 localPos = Grid.WorldToLocalCellPosition(particle.Position);
                 int2 cellIndex = Grid.CellIndexFromWorldPosition(particle.Position);
                 Cell cell = Grid._cells[cellIndex.x, cellIndex.y];
 

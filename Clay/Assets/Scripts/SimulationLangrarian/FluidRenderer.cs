@@ -26,7 +26,7 @@ namespace Fort.EulerSim
                     for (int j = 0; j < grid._cells.GetLength(1); j++)
                     {
                         var cell = grid._cells[i, j];
-                        var worldPos = grid.IndexToWorldPosition(new int2(i, j));
+                        var worldPos = grid.WorldPositionFromIndex(new int2(i, j));
                         var rect = new Rect(worldPos + grid._origin, grid._cellSize - GridLineSpaceThickness);
                         
                         Draw.Thickness = 10;
