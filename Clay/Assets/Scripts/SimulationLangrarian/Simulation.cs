@@ -12,9 +12,8 @@ namespace Fort.EulerSim
     public class Simulation : ImmediateModeShapeDrawer
     {
         public Grid Grid;
-        [SerializeField] private float _minDistFromCenterOfDensity = 0.001f;
 
-        [SerializeField] private float2 _minMaxValidDensity = new float2(0.4f, .6f);
+        [SerializeField] private float _boundaryPressure = 1;
         
         [SerializeField] private float _accelerationAwayFromPressureMultiplier = 0.01f;
         [SerializeField] private float _drag = 0.98f;
@@ -41,6 +40,22 @@ namespace Fort.EulerSim
                 Grid.AddParticleToSim(Particles[i]);
             }
             #endregion
+            
+            #region boundary pressure
+            var cells = Grid.Cells;
+            for (int i = 0; i < cells.GetLength(0); i++)
+            {
+                
+                cells[i, 0].Density = cells[i, 0].Density + _boundaryPressure;
+                cells[i, cells.GetLength(1) - 1].Density = cells[i, 0].Density + _boundaryPressure;
+            }
+            
+            for (int i = 0; i < cells.GetLength(1); i++)
+            {
+                cells[0, i].Density = cells[i, 0].Density + _boundaryPressure;
+                cells[cells.GetLength(1) - 1, 0].Density = cells[0, i].Density + _boundaryPressure;
+            }
+            #endregion
 
             #region simulate particles from grid
             for (int i = 0; i < Particles.Count; i++)
@@ -49,7 +64,23 @@ namespace Fort.EulerSim
                 
                 #region wrap position within grid
                 var gridBounds = Grid.GetWorldBounds();
-                particle.Position = math.clamp(particle.Position, gridBounds.min, gridBounds.max);
+                
+                var p = particle.Position;
+
+                while (p.x > gridBounds.xMax)
+                    p.x -= gridBounds.width;
+
+                while (p.x < gridBounds.xMin)
+                    p.x += gridBounds.width;
+                
+                while (p.y > gridBounds.yMax)
+                    p.y -= gridBounds.height;
+
+                while (p.y < gridBounds.yMin)
+                    p.y += gridBounds.height;
+
+                p = math.clamp(p, gridBounds.min, gridBounds.max);
+                particle.Position = p;
                 #endregion
                 
                 int2 cellIndex = Grid.CellIndexFromWorldPosition(particle.Position);
@@ -59,15 +90,6 @@ namespace Fort.EulerSim
                     float awayFromPressureMultiplier = cell.Density * _accelerationAwayFromPressureMultiplier;
                     float2 awayFromDensity = (particle.Position - cell.CenterOfDensity) * awayFromPressureMultiplier;
                     particle.Velocity += (awayFromDensity * 1/particle.Mass);
-                
-                
-                    // float distFromCenterOfDenssity = math.distance(float2.zero, awayFromDensity);
-                    //
-                    // if (distFromCenterOfDesnsity > _minDistFromCenterOfDensity)
-                    // {
-                    //     
-                    //     //change velocity based on inertia and center of desnity
-                    // }
 
                     particle.Position += particle.Velocity;
                     particle.Velocity *= _drag;

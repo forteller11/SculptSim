@@ -203,16 +203,14 @@ MonoBehaviour:
       x: 0
       y: 0
     _dimensions:
-      x: 8
-      y: 8
+      x: 16
+      y: 16
     _cellSize:
-      x: 1
-      y: 1
-  _viscocity: 0.98
-  _minDistFromCenterOfDensity: 0.001
-  _minMaxValidDensity:
-    x: 0.4
-    y: 0.6
+      x: 0.5
+      y: 0.5
+  _boundaryPressure: 1
+  _accelerationAwayFromPressureMultiplier: 0.001
+  _drag: 0.98
 --- !u!4 &341099789
 Transform:
   m_ObjectHideFlags: 0
@@ -258,9 +256,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   useCullingMasks: 0
   _simulation: {fileID: 341099788}
-  GridLineThickness: 0.05
-  GridLineSpaceThickness: 0.01
-  ParticleRadius: 0.1
+  GridLineThickness: 0.01
+  GridLineSpaceThickness: 0
+  MinMaxDensity:
+    x: 0
+    y: 10
+  GridBorderColor: {r: 0.20754719, g: 0.20754719, b: 0.20754719, a: 1}
+  ParticleRadius: 0.05
+  ShouldRenderParticles: 1
+  ShouldRenderGrid: 1
 --- !u!4 &1042895496
 Transform:
   m_ObjectHideFlags: 0
@@ -311,8 +315,8 @@ Camera:
   m_GameObject: {fileID: 1400137178}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.3532396, g: 0.50380814, b: 0.509434, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
